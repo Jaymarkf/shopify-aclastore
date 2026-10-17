@@ -1,0 +1,6 @@
+mutation AssignOloPromotionProducts($id: ID!, $productIds: [ID!]!) {
+  collectionAddProducts(id: $id, productIds: $productIds) {
+    collection { id title products(first: 50) { nodes { id } } }
+    userErrors { field message }
+  }
+}

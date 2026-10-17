@@ -1,0 +1,6 @@
+mutation CreateOloAutomaticDiscount($automaticBasicDiscount: DiscountAutomaticBasicInput!) {
+  discountAutomaticBasicCreate(automaticBasicDiscount: $automaticBasicDiscount) {
+    automaticDiscountNode { id automaticDiscount { ... on DiscountAutomaticBasic { title status } } }
+    userErrors { field code message }
+  }
+}

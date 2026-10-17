@@ -1,0 +1,13 @@
+{
+  "metafieldDefinitionCreate": {
+    "createdDefinition": {
+      "id": "gid://shopify/MetafieldDefinition/311457611846",
+      "namespace": "custom",
+      "key": "promotion_enabled",
+      "type": {
+        "name": "boolean"
+      }
+    },
+    "userErrors": []
+  }
+}

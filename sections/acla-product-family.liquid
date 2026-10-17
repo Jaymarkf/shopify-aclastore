@@ -1,0 +1,914 @@
+{% liquid
+  assign family_products = product.metafields.custom.family_products.value | default: section.settings.products
+  assign family_count = 0
+  assign minimum_price = nil
+  assign maximum_price = 0
+  for family_product in family_products limit: 50
+    unless family_product.id == product.id
+      assign family_count = family_count | plus: 1
+      if minimum_price == nil
+        assign minimum_price = family_product.price
+      elsif family_product.price < minimum_price
+        assign minimum_price = family_product.price
+      endif
+      if family_product.price > maximum_price
+        assign maximum_price = family_product.price
+      endif
+    endunless
+  endfor
+  assign hero_image = product.featured_image
+  if hero_image == blank
+    assign hero_image = family_products.first.featured_image
+  endif
+  assign hero_alt = hero_image.alt | default: product.title
+  assign question_count = section.blocks | where: 'type', 'question' | size
+  assign app_count = section.blocks | where: 'type', '@app' | size
+%}
+
+<acla-product-family
+  class="acla-family"
+  id="ProductFamily-{{ section.id }}"
+  data-section-id="{{ section.id }}"
+  data-view="{{ section.settings.default_view }}"
+  data-currency="{{ localization.country.currency.iso_code }}"
+  data-locale="{{ request.locale.iso_code }}"
+  data-cart-add-url="{{ routes.cart_add_url }}.js"
+  data-cart-url="{{ routes.cart_url }}"
+  style="--family-accent: {{ section.settings.accent_color }}; --family-padding-top: {{ section.settings.padding_top }}px; --family-padding-bottom: {{ section.settings.padding_bottom }}px;"
+>
+  <div class="acla-family__container">
+    <nav class="acla-family__breadcrumb" aria-label="{{ 'acla_family.breadcrumb' | t }}">
+      <a href="{{ routes.root_url }}">{{ 'acla_family.home' | t }}</a>
+      <span aria-hidden="true">/</span>
+      <a href="{{ routes.all_products_collection_url }}">{{ 'acla_family.art_supplies' | t }}</a>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page">{{ product.title | escape }}</span>
+    </nav>
+
+    <div class="acla-family__hero">
+      <div class="acla-family__gallery">
+        <button class="acla-family__main-image" type="button" data-open-image aria-label="{{ 'acla_family.zoom_image' | t }}"{% if hero_image == blank %} disabled{% endif %}>
+          {% if hero_image %}
+            {{ hero_image | image_url: width: 1200 | image_tag: widths: '400, 600, 900, 1200', sizes: '(min-width: 990px) 560px, (min-width: 750px) 50vw, 100vw', loading: 'eager', fetchpriority: 'high', alt: hero_alt, data-main-image: '' }}
+          {% else %}
+            {{ 'product-1' | placeholder_svg_tag: 'acla-family__placeholder' }}
+          {% endif %}
+          <span class="acla-family__zoom-icon" aria-hidden="true">⌕</span>
+        </button>
+        {% if product.images.size > 1 %}
+          <div class="acla-family__thumbnails" role="group" aria-label="{{ 'acla_family.product_images' | t }}">
+            {% for gallery_image in product.images limit: 8 %}
+              {% assign gallery_alt = gallery_image.alt | default: product.title %}
+              <button
+                type="button"
+                class="acla-family__thumbnail"
+                data-gallery-image="{{ gallery_image | image_url: width: 1200 }}"
+                data-gallery-srcset="{{ gallery_image | image_url: width: 400 }} 400w, {{ gallery_image | image_url: width: 900 }} 900w, {{ gallery_image | image_url: width: 1200 }} 1200w"
+                data-gallery-alt="{{ gallery_alt | escape }}"
+                aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}"
+                aria-label="{{ 'acla_family.image_number' | t: number: forloop.index | escape }}"
+              >
+                {{ gallery_image | image_url: width: 140 | image_tag: widths: '70, 140', sizes: '64px', loading: 'lazy', alt: gallery_alt }}
+              </button>
+            {% endfor %}
+          </div>
+        {% endif %}
+        <p class="acla-family__image-note">{{ 'acla_family.image_note' | t }}</p>
+      </div>
+
+      <div class="acla-family__intro">
+        {% if product.vendor != blank %}<p class="acla-family__brand">{{ product.vendor | escape }}</p>{% endif %}
+        <h1>{{ product.title | escape }}</h1>
+        {% if product.metafields.reviews.rating.value != blank %}
+          <p class="acla-family__rating">
+            <span aria-hidden="true">★</span>
+            {{ product.metafields.reviews.rating.value.rating }} / {{ product.metafields.reviews.rating.value.scale_max }}
+            {% if product.metafields.reviews.rating_count.value != blank %}
+              <span>({{ product.metafields.reviews.rating_count.value }})</span>
+            {% endif %}
+          </p>
+        {% endif %}
+        {% if family_count > 0 %}
+          <p class="acla-family__hero-price">
+            {% if minimum_price != maximum_price %}<span>{{ 'acla_family.from' | t }}</span>{% endif %}
+            <strong>{{ minimum_price | money }}</strong><span>{{ 'acla_family.each' | t }}</span>
+            {% render 'acla-promotion-badge', product_resource: product %}
+            {% render 'acla-cart-status', product_resource: product %}
+          </p>
+        {% endif %}
+        {% if product.description != blank %}
+          <div class="acla-family__description-wrap" data-description-wrap>
+            <div id="FamilyDescription-{{ section.id }}" class="acla-family__description-window" data-description-window>
+              <div class="acla-family__description rte" data-description-content>{{ product.description }}</div>
+            </div>
+            <button type="button" class="acla-family__text-link acla-family__description-toggle" data-description-toggle aria-expanded="false" aria-controls="FamilyDescription-{{ section.id }}" hidden>
+              <span data-description-label>{{ 'acla_family.read_more' | t }}</span><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg>
+            </button>
+          </div>
+        {% endif %}
+        <div class="acla-family__intro-divider"></div>
+        <div class="acla-family__shop-intro">
+          <div>
+            <strong>{{ 'acla_family.find_your_colors' | t }}</strong>
+            <span>{{ 'acla_family.color_count' | t: count: family_count }}</span>
+          </div>
+          <a class="acla-family__button" href="#FamilyShop-{{ section.id }}">{{ 'acla_family.shop_colors' | t }} <span aria-hidden="true">↓</span></a>
+        </div>
+        <p class="acla-family__mix-note">{{ 'acla_family.mix_note' | t }}</p>
+        {% if shop.shipping_policy.body != blank %}
+          <a class="acla-family__text-link" href="{{ shop.shipping_policy.url }}">{{ 'acla_family.shipping_details' | t }}</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <nav class="acla-family__tabs" aria-label="{{ 'acla_family.page_navigation' | t }}">
+      <a href="#FamilyShop-{{ section.id }}" class="is-active">{{ 'acla_family.shop_products' | t }} <span>{{ family_count }}</span></a>
+      {% if question_count > 0 %}<a href="#FamilyQuestions-{{ section.id }}">{{ 'acla_family.questions' | t }}</a>{% endif %}
+      {% if app_count > 0 %}<a href="#FamilyReviews-{{ section.id }}">{{ 'acla_family.reviews' | t }}</a>{% endif %}
+    </nav>
+
+    <section class="acla-family__shop" id="FamilyShop-{{ section.id }}" aria-labelledby="FamilyShopTitle-{{ section.id }}">
+      <div class="acla-family__section-heading">
+        <div><p class="acla-family__eyebrow">{{ 'acla_family.build_your_palette' | t }}</p><h2 id="FamilyShopTitle-{{ section.id }}">{{ 'acla_family.shop_colors' | t }}</h2></div>
+        <p>{{ 'acla_family.choose_quantities' | t }}</p>
+      </div>
+      {% if family_count > 0 %}
+        <div class="acla-family__toolbar">
+          <div class="acla-family__search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+            <label class="visually-hidden" for="FamilySearch-{{ section.id }}">{{ 'acla_family.search_colors' | t }}</label>
+            <input id="FamilySearch-{{ section.id }}" type="search" data-family-search placeholder="{{ 'acla_family.search_placeholder' | t }}" autocomplete="off">
+          </div>
+          <label class="acla-family__stock-filter"><input type="checkbox" data-in-stock-only> {{ 'acla_family.in_stock_only' | t }}</label>
+          <div class="acla-family__sort">
+            <label class="visually-hidden" for="FamilySort-{{ section.id }}">{{ 'acla_family.sort_by' | t }}</label>
+            <select id="FamilySort-{{ section.id }}" data-family-sort>
+              <option value="position">{{ 'acla_family.sort_featured' | t }}</option>
+              <option value="name">{{ 'acla_family.sort_name' | t }}</option>
+              <option value="price_asc">{{ 'acla_family.sort_price_low' | t }}</option>
+              <option value="price_desc">{{ 'acla_family.sort_price_high' | t }}</option>
+            </select>
+          </div>
+          <div class="acla-family__view-buttons" role="group" aria-label="{{ 'acla_family.display_view' | t }}">
+            <button type="button" data-family-view="grid" aria-label="{{ 'acla_family.grid_view' | t }}" aria-pressed="{% if section.settings.default_view == 'grid' %}true{% else %}false{% endif %}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg>
+            </button>
+            <button type="button" data-family-view="list" aria-label="{{ 'acla_family.list_view' | t }}" aria-pressed="{% if section.settings.default_view == 'list' %}true{% else %}false{% endif %}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M9 5h12M9 12h12M9 19h12M3 4h2v2H3zM3 11h2v2H3zM3 18h2v2H3z"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="acla-family__results-meta"><p data-result-count role="status">{{ 'acla_family.results_count' | t: shown: family_count, total: family_count }}</p><span>{{ 'acla_family.swatch_note' | t }}</span></div>
+
+        <div class="acla-family__selection" id="FamilySelection-{{ section.id }}" data-color-selection hidden>
+          <div class="acla-family__selection-image"><img data-selected-image width="260" height="220" alt="" loading="lazy"></div>
+          <div class="acla-family__selection-info">
+            <p class="acla-family__eyebrow">{{ 'acla_family.selected_color' | t }}</p>
+            <h3 data-selected-name></h3>
+            <p class="acla-family__selection-sku">{{ 'acla_family.sku' | t }} <span data-selected-sku></span></p>
+            <p class="acla-family__selection-price"><strong data-selected-price></strong> <span>{{ 'acla_family.each' | t }}</span></p>
+            <p data-selected-availability></p>
+            {% render 'acla-cart-status', product_resource: product %}
+            <div class="acla-family__selection-actions">
+              <label class="visually-hidden" for="FamilySingleQuantity-{{ section.id }}">{{ 'acla_family.quantity' | t }}</label>
+              <input id="FamilySingleQuantity-{{ section.id }}" type="number" data-selected-quantity value="1" min="1" inputmode="numeric" autocomplete="off">
+              <button type="button" class="acla-family__button" data-add-single data-cart-action>{{ 'acla_family.add_to_cart' | t }}</button>
+            </div>
+            <a class="acla-family__text-link" data-selected-link>{{ 'acla_family.item_details' | t }} <span aria-hidden="true">↗</span></a>
+          </div>
+          <button type="button" class="acla-family__close" data-close-selection aria-label="{{ 'acla_family.close_preview' | t }}">×</button>
+        </div>
+
+        <div class="acla-family__list-heading" aria-hidden="true"><span>{{ 'acla_family.color' | t }}</span><span>{{ 'acla_family.sku' | t }}</span><span>{{ 'acla_family.price' | t }}</span><span>{{ 'acla_family.availability' | t }}</span><span>{{ 'acla_family.quantity' | t }}</span><span></span></div>
+        <ul class="acla-family__items" data-family-items aria-label="{{ 'acla_family.available_colors' | t }}">
+          {% for family_product in family_products limit: 50 %}
+            {% unless family_product.id == product.id %}
+              {% render 'acla-family-item', item_product: family_product, family_id: section.id, position: forloop.index %}
+            {% endunless %}
+          {% endfor %}
+        </ul>
+        <div class="acla-family__empty-results" data-empty-results hidden><p>{{ 'acla_family.no_results' | t }}</p><button type="button" class="acla-family__text-link" data-clear-filters>{{ 'acla_family.clear_filters' | t }}</button></div>
+        <div class="acla-family__feedback" data-family-feedback role="status" aria-live="polite" tabindex="-1" hidden></div>
+
+        <div class="acla-family__order-bar">
+          <div class="acla-family__order-count"><strong data-selected-count>{{ 'acla_family.selected_count' | t: count: 0 }}</strong><button type="button" data-clear-selection disabled>{{ 'acla_family.clear_selection' | t }}</button></div>
+          <div class="acla-family__order-total"><span>{{ 'acla_family.subtotal' | t }}</span><strong data-selected-total>{{ 0 | money }}</strong></div>
+          <button type="button" class="acla-family__button acla-family__add-selected" data-add-selected data-cart-action disabled>{{ 'acla_family.add_selected' | t }} <span aria-hidden="true">→</span></button>
+        </div>
+        <noscript><p>{{ 'acla_family.no_javascript' | t }}</p><style>.acla-family__quantity,.acla-family__order-bar,.acla-family__toolbar{display:none!important}.acla-family__item-link{display:block!important}</style></noscript>
+      {% else %}
+        <div class="acla-family__empty-results">
+          {% if request.design_mode %}<p>{{ 'acla_family.editor_empty' | t }}</p>{% else %}<p>{{ 'acla_family.empty_group' | t }}</p>{% endif %}
+        </div>
+      {% endif %}
+    </section>
+
+    {% if question_count > 0 %}
+      <section class="acla-family__questions" id="FamilyQuestions-{{ section.id }}" aria-labelledby="FamilyQuestionsTitle-{{ section.id }}">
+        <h2 id="FamilyQuestionsTitle-{{ section.id }}">{{ 'acla_family.questions' | t }}</h2>
+        {% for block in section.blocks %}
+          {% if block.type == 'question' %}
+            <details {{ block.shopify_attributes }}><summary>{{ block.settings.question | escape }}<span aria-hidden="true">+</span></summary><div>{{ block.settings.answer }}</div></details>
+          {% endif %}
+        {% endfor %}
+      </section>
+    {% endif %}
+    {% if app_count > 0 %}
+      <section class="acla-family__reviews" id="FamilyReviews-{{ section.id }}" aria-label="{{ 'acla_family.reviews' | t }}">
+        {% for block in section.blocks %}{% if block.type == '@app' %}{% render block %}{% endif %}{% endfor %}
+      </section>
+    {% endif %}
+  </div>
+
+  <dialog class="acla-family__image-dialog" data-image-dialog aria-label="{{ 'acla_family.image_preview' | t }}">
+    <button type="button" class="acla-family__close" data-close-image aria-label="{{ 'acla_family.close_preview' | t }}">×</button>
+    <img data-zoom-image width="1200" height="1200" alt="">
+  </dialog>
+  <script type="application/json" data-family-strings>
+    {
+      "results": {{ 'acla_family.results_count' | t: shown: '[shown]', total: '[total]' | json }},
+      "selected": {{ 'acla_family.selected_count' | t: count: '[count]' | json }},
+      "in_stock": {{ 'acla_family.in_stock' | t | json }},
+      "sold_out": {{ 'acla_family.sold_out' | t | json }},
+      "cart_limit": {{ 'acla_family.cart_limit' | t | json }},
+      "adding": {{ 'acla_family.adding' | t | json }},
+      "add_selected": {{ 'acla_family.add_selected' | t | json }},
+      "add_to_cart": {{ 'acla_family.add_to_cart' | t | json }},
+      "added_one": {{ 'acla_family.added_one' | t | json }},
+      "added_many": {{ 'acla_family.added_many' | t: count: '[count]' | json }},
+      "view_cart": {{ 'acla_family.view_cart' | t | json }},
+      "error": {{ 'acla_family.cart_error' | t | json }},
+      "uncertain": {{ 'acla_family.cart_uncertain' | t | json }},
+      "partial": {{ 'acla_family.cart_partial' | t | json }},
+      "quantity_error": {{ 'acla_family.quantity_error' | t | json }},
+      "read_more": {{ 'acla_family.read_more' | t | json }},
+      "show_less": {{ 'acla_family.show_less' | t | json }}
+    }
+  </script>
+  {% if family_count > 0 %}
+    <script type="application/ld+json">
+      {"@context":"https://schema.org","@type":"ItemList","name":{{ product.title | json }},"numberOfItems":{{ family_count }},"itemListElement":[
+        {% assign structured_position = 0 %}
+        {% for family_product in family_products limit: 50 %}
+          {% unless family_product.id == product.id %}
+            {% if structured_position > 0 %},{% endif %}
+            {% assign structured_position = structured_position | plus: 1 %}
+            {"@type":"ListItem","position":{{ structured_position }},"name":{{ family_product.title | json }},"url":{{ request.origin | append: family_product.url | json }}}
+          {% endunless %}
+        {% endfor %}
+      ]}
+    </script>
+  {% endif %}
+</acla-product-family>
+
+{% stylesheet %}
+  .acla-family{display:block;color:#202522;background:#fff;font-family:var(--font-body--family,Arial,sans-serif);font-size:14px;line-height:1.55;padding-block:var(--family-padding-top) var(--family-padding-bottom);--family-border:#dfe4e0;--family-muted:#626b65;--family-soft:#f4f7f4;--family-radius:4px}
+  .acla-family *, .acla-family *::before,.acla-family *::after{box-sizing:border-box}
+  .acla-family [hidden]{display:none!important}
+  .acla-family button,.acla-family input,.acla-family select{font:inherit;letter-spacing:normal}
+  .acla-family button{cursor:pointer}
+  .acla-family button:disabled{cursor:not-allowed;opacity:.48}
+  .acla-family :is(button,a,input,select,summary):focus-visible{outline:2px solid var(--family-accent);outline-offset:4px}
+  .acla-family a{color:inherit;text-decoration:none}
+  .acla-family p{margin:0}
+  .acla-family h1,.acla-family h2,.acla-family h3{font-family:var(--font-heading--family,inherit);font-weight:650;letter-spacing:-.035em;color:inherit;text-wrap:balance}
+  .acla-family h1{font-size:clamp(1.375rem,1rem + .85vw,1.8125rem);font-weight:700;line-height:1.25;letter-spacing:-.02em;overflow-wrap:anywhere;margin:8px 0 18px}
+  .acla-family h2{font-size:28px;line-height:1.2;margin:0 0 12px}
+  .acla-family h3{font-size:25px;line-height:1.2;margin:4px 0 10px}
+  .acla-family__container{max-width:1328px;margin-inline:auto;padding-inline:40px}
+  .acla-family__breadcrumb{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--family-muted);margin-bottom:32px}
+  .acla-family__breadcrumb a:hover{text-decoration:underline}
+  .acla-family__breadcrumb [aria-current]{color:#292f2b}
+  .acla-family__hero{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:80px;align-items:start;padding-bottom:48px}
+  .acla-family__gallery{min-width:0}
+  .acla-family__main-image{display:grid;place-items:center;position:relative;width:100%;aspect-ratio:1.18;background:#fff;border:1px solid #edf0ed;border-radius:var(--family-radius);padding:28px}
+  .acla-family__main-image img{width:100%;height:100%;max-height:420px;object-fit:contain}
+  .acla-family__placeholder{height:100%;width:100%}
+  .acla-family__zoom-icon{position:absolute;right:14px;bottom:12px;display:grid;place-items:center;width:32px;height:32px;border:1px solid var(--family-border);border-radius:50%;background:#fff;font-size:24px;line-height:1}
+  .acla-family__thumbnails{display:flex;justify-content:center;gap:10px;margin-top:16px;overflow-x:auto}
+  .acla-family__thumbnail{width:66px;height:66px;flex:0 0 66px;background:#fff;border:1px solid var(--family-border);border-radius:3px;padding:5px}
+  .acla-family__thumbnail[aria-pressed=true]{border-color:var(--family-accent);box-shadow:0 0 0 1px var(--family-accent)}
+  .acla-family__thumbnail img{height:100%;width:100%;object-fit:contain}
+  .acla-family__image-note{text-align:center;font-size:11px;color:var(--family-muted);margin-top:14px!important}
+  .acla-family__brand{text-transform:uppercase;letter-spacing:.16em;font-size:12px;font-weight:700;color:var(--family-accent)}
+  .acla-family__hero-price{display:flex;align-items:baseline;gap:8px;margin-bottom:18px!important}
+  .acla-family__hero-price strong{font-size:29px;letter-spacing:-.03em}
+  .acla-family__hero-price span{font-size:13px;color:var(--family-muted)}
+  .acla-family__description-wrap{--description-preview-height:190px}
+  .acla-family__description-window{position:relative;display:flow-root}
+  .acla-family__description-wrap[data-collapsible=true] .acla-family__description-window{overflow:clip}
+  .acla-family__description-wrap[data-collapsible=true][data-expanded=false] .acla-family__description-window::after{content:"";position:absolute;inset: auto 0 0;height:38px;background:linear-gradient(transparent,#fff);pointer-events:none}
+  .acla-family__description-toggle{margin-top:12px}
+  .acla-family__description-toggle svg{width:18px;height:18px;transition:transform .6s cubic-bezier(.2,.7,.2,1)}
+  .acla-family__description-toggle[aria-expanded=true] svg{transform:rotate(180deg)}
+  .acla-family__text-link{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;text-decoration:underline!important;text-underline-offset:3px;background:none;border:0;padding:0;color:var(--family-accent)!important}
+  .acla-family__intro-divider{height:1px;background:var(--family-border);margin-block:25px}
+  .acla-family__shop-intro{display:flex;align-items:center;justify-content:space-between;gap:20px}
+  .acla-family__shop-intro strong{display:block;font-size:17px;margin-bottom:2px}
+  .acla-family__shop-intro div>span{font-size:13px;color:var(--family-muted)}
+  .acla-family__button{display:inline-flex;align-items:center;justify-content:center;gap:18px;min-height:48px;background:var(--family-accent);color:#fff!important;border:1px solid var(--family-accent);border-radius:var(--family-radius);padding:12px 23px;font-weight:650;line-height:1.3;transition:filter .15s}
+  .acla-family__button:hover{filter:brightness(.9)}
+  .acla-family__mix-note{color:var(--family-muted);font-size:12px;margin-block:16px 12px!important}
+  .acla-family__rating{margin-bottom:12px!important}.acla-family__rating>span:first-child{color:var(--family-accent)}
+  .acla-family__tabs{position:sticky;top:var(--header-height,0px);z-index:3;display:flex;gap:36px;background:#fff;border-block:1px solid var(--family-border);margin-bottom:38px;overflow-x:auto;scrollbar-width:none}
+  .acla-family__tabs a{white-space:nowrap;display:flex;align-items:center;gap:8px;padding:19px 0 17px;font-size:14px;font-weight:550;border-bottom:3px solid transparent}
+  .acla-family__tabs a:hover,.acla-family__tabs a.is-active{color:var(--family-accent);border-bottom-color:var(--family-accent)}
+  .acla-family__tabs a>span{background:var(--family-soft);border-radius:20px;padding:1px 8px;font-size:11px}
+  .acla-family :is(.acla-family__shop,.acla-family__details,.acla-family__questions,.acla-family__reviews){scroll-margin-top:calc(var(--header-height,0px) + 90px)}
+  .acla-family__section-heading{display:flex;justify-content:space-between;align-items:end;gap:24px;margin-bottom:24px}
+  .acla-family__eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:.15em;font-weight:700;color:var(--family-accent);margin-bottom:8px!important}
+  .acla-family__section-heading h2{margin-bottom:0}
+  .acla-family__section-heading>p{font-size:13px;color:var(--family-muted);max-width:330px;text-align:right}
+  .acla-family__toolbar{display:flex;align-items:center;gap:20px;padding:17px 20px;background:var(--family-soft);border:1px solid #e8ece8;border-radius:var(--family-radius)}
+  .acla-family__search{position:relative;flex:1;min-width:160px}
+  .acla-family__search svg{position:absolute;left:12px;top:12px;height:18px;width:18px;pointer-events:none}
+  .acla-family__search input{width:100%;height:42px;background:#fff;border:1px solid #cdd5cf;border-radius:3px;padding:9px 12px 9px 38px;font-size:13px;color:inherit}
+  .acla-family__stock-filter{display:flex;gap:8px;align-items:center;white-space:nowrap;font-size:12px;cursor:pointer}
+  .acla-family__stock-filter input{accent-color:var(--family-accent);height:16px;width:16px;margin:0}
+  .acla-family__sort select{height:42px;border:1px solid #cdd5cf;border-radius:3px;padding:8px 28px 8px 12px;background:#fff;color:inherit;font-size:12px;max-width:185px}
+  .acla-family__view-buttons{display:flex;border:1px solid #cdd5cf;border-radius:3px;overflow:hidden;flex-shrink:0}
+  .acla-family__view-buttons button{border:0;background:#fff;width:40px;height:40px;display:grid;place-items:center;color:#626b65}
+  .acla-family__view-buttons button+button{border-left:1px solid #cdd5cf}
+  .acla-family__view-buttons button[aria-pressed=true]{background:#e0eae3;color:var(--family-accent)}
+  .acla-family__view-buttons svg{width:20px;height:20px}
+  .acla-family__results-meta{display:flex;justify-content:space-between;gap:20px;align-items:center;font-size:11px;color:var(--family-muted);padding:18px 0}
+  .acla-family__results-meta>span{text-align:right}
+  .acla-family__items{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:0;list-style:none;padding:0;margin:0;border-top:1px solid var(--family-border);border-left:1px solid var(--family-border)}
+  .acla-family__item{position:relative;display:flex;flex-direction:column;min-width:0;gap:9px;padding:18px 13px 14px;border-bottom:1px solid var(--family-border);border-right:1px solid var(--family-border);background:#fff}
+  .acla-family__item:has([data-family-quantity]:not([value="0"])):focus-within{z-index:1}
+  .acla-family__item.is-selected{background:#f5faf6;box-shadow:inset 0 0 0 1px var(--family-accent)}
+  .acla-family__color{display:flex;flex-direction:column;align-items:stretch;gap:10px;background:none;border:0;padding:0;color:inherit;text-align:left;min-width:0}
+  .acla-family__swatch{position:relative;display:block;height:55px;border-radius:3px;background:var(--family-swatch,#f2f3f2);box-shadow:inset 0 0 0 1px #00000010;transition:transform .15s}
+  .acla-family__swatch--photo{background:#fff}.acla-family__swatch img{width:100%;height:100%;object-fit:contain}
+  .acla-family__color:hover .acla-family__swatch{transform:translateY(-2px)}
+  .acla-family__selected-mark{display:none;position:absolute;right:5px;bottom:5px;border-radius:50%;background:#fff;color:var(--family-accent);height:20px;width:20px;text-align:center;font-size:13px;box-shadow:0 1px 4px #0002;line-height:20px}
+  .acla-family__item.is-selected .acla-family__selected-mark{display:block}
+  .acla-family__color-code{display:block;font-size:11px;font-weight:750;letter-spacing:.02em;margin-bottom:2px;line-height:1.2}
+  .acla-family__color-name{display:block;font-size:12px;line-height:1.4;min-height:34px;text-wrap:pretty}
+  .acla-family__item-price{display:flex;align-items:baseline;gap:4px;flex-wrap:wrap;margin-top:auto;font-size:12px}
+  .acla-family__item-price strong{font-weight:700}.acla-family__item-price span{color:var(--family-muted);font-size:10px}.acla-family__item-price s{color:var(--family-muted);font-size:10px}
+  .acla-family__availability{color:var(--family-accent);font-size:10px;display:flex;align-items:center;gap:4px}
+  .acla-family__availability::before{content:'';display:block;width:5px;height:5px;background:currentColor;border-radius:50%;flex-shrink:0}
+  .acla-family__availability--unavailable{color:#757575}
+  .acla-family__quantity{display:grid;grid-template-columns:27px minmax(25px,1fr) 27px;height:32px;border:1px solid #cdd5cf;border-radius:3px;overflow:hidden;background:#fff}
+  .acla-family__quantity button{border:0;background:#fff;padding:0;font-size:16px;color:#3f4d43}
+  .acla-family__quantity input{appearance:textfield;-moz-appearance:textfield;width:100%;border:0;border-inline:1px solid #e3e7e3;background:#fff;border-radius:0;text-align:center;font-size:12px;padding:2px;color:inherit;min-width:0}
+  .acla-family input[type=number]::-webkit-inner-spin-button,.acla-family input[type=number]::-webkit-outer-spin-button{appearance:none;margin:0}
+  .acla-family__item-sku{display:none;font-size:11px;color:var(--family-muted);overflow-wrap:anywhere}
+  .acla-family__item-link{font-size:10px;text-decoration:underline!important;text-underline-offset:3px;color:var(--family-muted)!important}
+  .acla-family__list-heading{display:none}
+  .acla-family[data-view=list] .acla-family__list-heading{display:grid;grid-template-columns:minmax(220px,2.3fr) 1fr .8fr .8fr 108px 62px;gap:20px;align-items:center;padding:12px 16px;background:var(--family-soft);font-size:11px;font-weight:650;border:1px solid var(--family-border);border-bottom:0}
+  .acla-family[data-view=list] .acla-family__items{display:block;border-left:0}
+  .acla-family[data-view=list] .acla-family__item{display:grid;grid-template-columns:minmax(220px,2.3fr) 1fr .8fr .8fr 108px 62px;gap:20px;align-items:center;padding:16px;border-left:1px solid var(--family-border)}
+  .acla-family[data-view=list] .acla-family__color{flex-direction:row;align-items:center;gap:14px}
+  .acla-family[data-view=list] .acla-family__swatch{width:46px;height:44px;flex:0 0 46px}
+  .acla-family[data-view=list] .acla-family__color-name{min-height:0;font-size:13px}
+  .acla-family[data-view=list] .acla-family__item-sku{display:block}.acla-family[data-view=list] .acla-family__item-sku>span{display:none}
+  .acla-family[data-view=list] .acla-family__item-price{margin-top:0}
+  .acla-family__selection{position:relative;display:grid;grid-template-columns:230px 1fr;gap:36px;border:1px solid var(--family-border);background:#fbfcfb;padding:28px 40px;margin-bottom:22px;border-radius:var(--family-radius)}
+  .acla-family__selection-image{display:grid;place-items:center;background:#fff;min-width:0}
+  .acla-family__selection-image img{width:100%;height:220px;object-fit:contain;padding:15px}
+  .acla-family__selection-sku{font-size:11px;color:var(--family-muted);margin-bottom:10px!important}
+  .acla-family__selection-price{font-size:21px;margin-bottom:6px!important}.acla-family__selection-price span{font-size:12px;color:var(--family-muted)}
+  .acla-family__selection-info>[data-selected-availability]{font-size:12px;color:var(--family-accent)}
+  .acla-family__selection-actions{display:flex;align-items:center;gap:10px;margin-block:16px 12px}
+  .acla-family__selection-actions input{height:46px;width:65px;border:1px solid #bdc8c0;border-radius:3px;background:#fff;text-align:center;padding:8px;color:inherit}
+  .acla-family__selection-actions .acla-family__button{min-height:46px}
+  .acla-family__close{position:absolute;right:12px;top:10px;display:grid;place-items:center;width:34px;height:34px;border:0;background:transparent;color:#4a554d;font-size:26px;line-height:1}
+  .acla-family__order-bar{position:sticky;bottom:0;z-index:4;display:flex;align-items:center;gap:28px;background:#fff;padding:18px 24px;margin-top:24px;border:1px solid var(--family-border);border-top:2px solid var(--family-accent);box-shadow:0 -5px 20px #1c342009}
+  .acla-family__order-count{display:flex;flex:1;align-items:start;flex-direction:column;gap:3px;font-size:14px}
+  .acla-family__order-count button{padding:0;background:none;border:0;text-decoration:underline;text-underline-offset:2px;color:var(--family-muted);font-size:11px}
+  .acla-family__order-total{display:flex;flex-direction:column;text-align:right}.acla-family__order-total span{font-size:11px;color:var(--family-muted)}.acla-family__order-total strong{font-size:24px;letter-spacing:-.03em}
+  .acla-family__add-selected{min-width:235px}
+  .acla-family__empty-results{text-align:center;padding:45px 20px;border:1px solid var(--family-border);background:var(--family-soft)}.acla-family__empty-results p{margin-bottom:10px}
+  .acla-family__feedback{padding:15px 20px;margin-top:20px;border:1px solid #bed6c3;border-radius:3px;background:#f1f8f3;font-size:13px}
+  .acla-family__feedback[data-error=true]{background:#fff6f3;border-color:#e3b8aa;color:#842f19}.acla-family__feedback a{margin-left:10px;text-decoration:underline;font-weight:650;white-space:nowrap}
+  .acla-family__questions,.acla-family__reviews{border-top:1px solid var(--family-border);margin-top:48px;padding-top:32px}
+  .acla-family__description{display:flow-root;color:#535c55;font-size:15px;line-height:1.85;overflow-wrap:anywhere}.acla-family__description p{margin-block:0 15px}.acla-family__description img,.acla-family__description video,.acla-family__description iframe{max-width:100%;height:auto}.acla-family__description ul{list-style:disc;padding-left:24px}.acla-family__description ol{list-style:decimal;padding-left:24px}.acla-family__description li{margin-bottom:6px}.acla-family__description :first-child{margin-top:0}.acla-family__description :last-child{margin-bottom:0}
+  .acla-family__questions details{border-bottom:1px solid var(--family-border);padding:0 4px}
+  .acla-family__questions summary{display:flex;justify-content:space-between;align-items:center;gap:20px;cursor:pointer;font-weight:550;padding:20px 0;list-style:none}
+  .acla-family__questions summary::-webkit-details-marker{display:none}.acla-family__questions summary>span{font-size:20px;font-weight:400}.acla-family__questions details[open] summary>span{transform:rotate(45deg)}
+  .acla-family__questions details>div{padding-bottom:20px;max-width:800px;color:#535c55}
+  .acla-family__image-dialog{position:fixed;inset:0;width:min(94vw,1050px);max-width:94vw;max-height:92vh;margin:auto;border:0;border-radius:5px;background:#fff;padding:45px;z-index:100;color:inherit}
+  .acla-family__image-dialog::backdrop{background:#122319a6}.acla-family__image-dialog img{width:100%;height:calc(85vh - 90px);object-fit:contain}.acla-family__image-dialog .acla-family__close{position:absolute}
+  @media(min-width:1500px){.acla-family__items{grid-template-columns:repeat(10,minmax(0,1fr))}}
+  @media(max-width:1100px){.acla-family__hero{gap:40px}.acla-family__container{padding-inline:28px}.acla-family__items{grid-template-columns:repeat(6,minmax(0,1fr))}.acla-family__toolbar{gap:12px;padding:14px}.acla-family[data-view=list] .acla-family__item,.acla-family[data-view=list] .acla-family__list-heading{grid-template-columns:minmax(180px,2fr) 1fr .8fr .8fr 98px;gap:12px}.acla-family[data-view=list] .acla-family__item-link,.acla-family[data-view=list] .acla-family__list-heading>span:last-child{display:none}}
+  @media(max-width:749px){.acla-family__container{padding-inline:18px}.acla-family__breadcrumb{font-size:10px;gap:7px;margin-bottom:20px}.acla-family__breadcrumb [aria-current]{display:none}.acla-family__breadcrumb>span:last-of-type:not([aria-current]){display:none}.acla-family__hero{grid-template-columns:1fr;gap:28px;padding-bottom:30px}.acla-family__main-image{aspect-ratio:1.35;padding:15px}.acla-family__main-image img{max-height:285px}.acla-family__image-note{font-size:10px}.acla-family h1{margin-block:6px 12px}.acla-family__brand{font-size:11px}.acla-family__hero-price{margin-bottom:12px!important}.acla-family__hero-price strong{font-size:26px}.acla-family__summary{font-size:14px;line-height:1.75}.acla-family__intro-divider{margin-block:20px}.acla-family__shop-intro strong{font-size:15px}.acla-family__shop-intro .acla-family__button{min-height:44px;padding:10px 18px;font-size:13px}.acla-family__tabs{gap:25px;margin-top:0;margin-bottom:28px;top:var(--header-height,0px)}.acla-family__tabs a{font-size:12px;padding-block:15px 12px}.acla-family__section-heading{align-items:start;flex-direction:column;gap:8px;margin-bottom:18px}.acla-family__section-heading>p{font-size:12px;text-align:left;max-width:none}.acla-family h2{font-size:25px}.acla-family__toolbar{display:grid;grid-template-columns:1fr auto;gap:12px;padding:13px}.acla-family__search{grid-column:1/-1}.acla-family__stock-filter{font-size:11px}.acla-family__sort{grid-column:1;grid-row:3}.acla-family__sort select{width:100%;max-width:none;height:38px}.acla-family__view-buttons{grid-column:2;grid-row:2/4;align-self:end}.acla-family__results-meta{font-size:10px;align-items:start;gap:15px}.acla-family__results-meta>span{max-width:140px}.acla-family__items{grid-template-columns:repeat(3,minmax(0,1fr))}.acla-family__item{padding:13px 9px 11px;gap:8px}.acla-family__swatch{height:45px}.acla-family__color-name{font-size:11px;min-height:31px}.acla-family__quantity{grid-template-columns:25px minmax(22px,1fr) 25px;height:34px}.acla-family__item-price{font-size:11px}.acla-family__item-link{font-size:9px}.acla-family__selection{grid-template-columns:95px 1fr;padding:20px 16px;gap:15px}.acla-family__selection-image img{height:150px;padding:5px}.acla-family h3{font-size:21px}.acla-family__selection .acla-family__eyebrow{font-size:9px}.acla-family__selection-sku{font-size:10px}.acla-family__selection-actions{flex-wrap:wrap;gap:7px}.acla-family__selection-actions input{height:40px;width:48px}.acla-family__selection-actions .acla-family__button{min-height:40px;padding:9px 12px;font-size:12px;gap:5px}.acla-family__selection .acla-family__close{right:4px;top:3px;width:28px;height:28px;font-size:22px}.acla-family__selection .acla-family__text-link{font-size:11px}.acla-family[data-view=list] .acla-family__list-heading{display:none}.acla-family[data-view=list] .acla-family__item{grid-template-columns:minmax(0,1fr) 95px;gap:8px 14px;padding:16px 12px}.acla-family[data-view=list] .acla-family__color{grid-column:1;grid-row:1/4;gap:10px}.acla-family[data-view=list] .acla-family__swatch{width:37px;flex-basis:37px;height:43px}.acla-family[data-view=list] .acla-family__color-name{font-size:12px}.acla-family[data-view=list] .acla-family__item-price{grid-column:2;grid-row:1;justify-content:end}.acla-family[data-view=list] .acla-family__availability{grid-column:2;grid-row:2;justify-content:end}.acla-family[data-view=list] .acla-family__quantity{grid-column:2;grid-row:3}.acla-family[data-view=list] .acla-family__item-sku{grid-column:1/-1;font-size:9px;margin-left:47px}.acla-family__order-bar{display:grid;grid-template-columns:1fr auto;gap:12px;padding:13px 15px;padding-bottom:max(13px,env(safe-area-inset-bottom));margin-top:18px}.acla-family__order-count{font-size:12px}.acla-family__order-total strong{font-size:22px}.acla-family__add-selected{grid-column:1/-1;min-width:0;width:100%;min-height:45px;font-size:13px}.acla-family__details,.acla-family__questions{margin-top:35px;padding-top:25px}.acla-family__description{font-size:14px}.acla-family__image-dialog{padding:40px 15px 20px}.acla-family__image-dialog img{height:70vh}}
+  .acla-family :is(button,a,input,select){transition:background-color .4s ease,border-color .4s ease,color .4s ease,box-shadow .4s ease,opacity .4s ease,transform .4s ease}
+  .acla-family__button:not(:disabled):hover{transform:translateY(-2px);box-shadow:0 5px 14px #163a231c}
+  .acla-family__button:not(:disabled):active{transform:translateY(0) scale(.98)}
+  .acla-family__item{transition:background-color .45s ease,box-shadow .45s ease}
+  .acla-family__swatch,.acla-family__main-image img{transition:transform .65s cubic-bezier(.2,.7,.2,1)}
+  .acla-family__color:hover .acla-family__swatch{transform:translateY(-2px)}
+  .acla-family__main-image:hover img{transform:scale(1.025)}
+  .acla-family__quantity button:not(:disabled):active{transform:scale(.88)}
+  .acla-family__questions summary>span{transition:transform .45s ease}
+  @supports(interpolate-size:allow-keywords){
+    .acla-family__questions details{interpolate-size:allow-keywords}
+    .acla-family__questions details::details-content{height:0;overflow:clip;transition:height .6s cubic-bezier(.2,.7,.2,1),content-visibility .6s allow-discrete}
+    .acla-family__questions details[open]::details-content{height:auto}
+  }
+  .acla-family__image-dialog[open]{animation:acla-family-dialog-in .45s cubic-bezier(.2,.7,.2,1)}
+  .acla-family__image-dialog[open]::backdrop{animation:acla-family-backdrop-in .45s ease}
+  .acla-family__cart-flight{position:fixed;inset:auto;margin:0;padding:5px;width:48px;height:48px;border:1px solid #dfe4e0;border-radius:12px;background:#fff;box-shadow:0 6px 24px #173d2d26;pointer-events:none;z-index:2147483647;display:grid;place-items:center;overflow:hidden}
+  .acla-family__cart-flight img{width:100%;height:100%;object-fit:contain}
+  .acla-family__cart-flight span{width:100%;height:100%;border-radius:8px;background:var(--flight-color,#006b45)}
+  @keyframes acla-family-dialog-in{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+  @keyframes acla-family-backdrop-in{from{opacity:0}to{opacity:1}}
+  @media(prefers-reduced-motion:reduce){.acla-family *,.acla-family *::before,.acla-family *::after,.acla-family__questions details::details-content{scroll-behavior:auto!important;transition:none!important;animation:none!important}.acla-family__cart-flight{display:none!important}.acla-family .acla-family__button:hover,.acla-family .acla-family__main-image:hover img,.acla-family .acla-family__color:hover .acla-family__swatch{transform:none}}
+{% endstylesheet %}
+
+{% javascript %}
+  class AclaProductFamily extends HTMLElement {
+    connectedCallback() {
+      if (this.controller) return;
+      this.controller = new AbortController();
+      this.items = [...this.querySelectorAll('[data-family-item]')];
+      this.strings = JSON.parse(this.querySelector('[data-family-strings]').textContent);
+      this.formatter = new Intl.NumberFormat(this.dataset.locale || document.documentElement.lang || 'en', { style: 'currency', currency: this.dataset.currency || 'USD' });
+      this.pending = false;
+      this.uncertain = false;
+      this.motion = matchMedia('(prefers-reduced-motion: reduce)');
+      this.animations = new Set();
+      this.flights = new Set();
+      this.descriptionInert = new Set();
+      this.motion.addEventListener('change', () => {
+        if (!this.motion.matches) return;
+        this.animations.forEach(animation => animation.cancel());
+        this.flights.forEach(flight => flight.remove());
+        this.flights.clear();
+      }, { signal: this.controller.signal });
+      this.addEventListener('click', event => this.handleClick(event), { signal: this.controller.signal });
+      this.addEventListener('change', event => this.handleChange(event), { signal: this.controller.signal });
+      this.addEventListener('input', event => {
+        if (event.target.matches('[data-family-quantity]')) this.updateSummary();
+      }, { signal: this.controller.signal });
+      this.querySelector('[data-family-search]')?.addEventListener('input', () => this.filterItems(), { signal: this.controller.signal });
+      document.addEventListener('shopify:cart:lines-update', event => {
+        event.promise?.then(({ cart, detail }) => {
+          if (detail?.source === this.id) return;
+          if (detail?.items) this.syncCart({ items: detail.items });
+          else if (cart) this.refreshCart().then(value => this.syncCart(value)).catch(() => {});
+        }).catch(() => {});
+      }, { signal: this.controller.signal });
+      document.addEventListener('acla:cart-snapshot', event => this.syncCart(event.detail.cart), { signal: this.controller.signal });
+      this.querySelector('[data-image-dialog]')?.addEventListener('click', event => {
+        if (event.target === event.currentTarget) event.currentTarget.close();
+      }, { signal: this.controller.signal });
+      this.observer = new IntersectionObserver(entries => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          this.querySelectorAll('.acla-family__tabs a').forEach(link => link.classList.toggle('is-active', link.hash === '#' + entry.target.id));
+        }
+      }, { rootMargin: '-20% 0px -65% 0px', threshold: 0 });
+      this.querySelectorAll('.acla-family__shop,.acla-family__questions,.acla-family__reviews').forEach(section => this.observer.observe(section));
+      const description = this.querySelector('[data-description-content]');
+      if (description) {
+        this.descriptionObserver = new ResizeObserver(() => this.updateDescription());
+        this.descriptionObserver.observe(description);
+        this.updateDescription();
+      }
+      this.revealObserver = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (!entry.isIntersecting) return;
+          this.revealObserver.unobserve(entry.target);
+          this.animateElement(entry.target, [{ opacity: .25, transform: 'translateY(10px)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 650, delay: Number(entry.target.dataset.position || 0) % 8 * 30 });
+        });
+      }, { threshold: .08 });
+      this.querySelectorAll('.acla-family__section-heading,.acla-family__toolbar,.acla-family__questions,.acla-family__reviews,[data-family-item]').forEach(element => this.revealObserver.observe(element));
+      this.updateSummary();
+    }
+
+    disconnectedCallback() {
+      this.controller?.abort();
+      this.observer?.disconnect();
+      this.descriptionObserver?.disconnect();
+      this.revealObserver?.disconnect();
+      this.animations?.forEach(animation => animation.cancel());
+      this.flights?.forEach(flight => flight.remove());
+      this.descriptionInert?.forEach(element => element.inert = false);
+      this.controller = null;
+    }
+
+    animateElement(element, frames, options = {}) {
+      if (!element || this.motion.matches || !this.isConnected) return null;
+      const animation = element.animate(frames, { duration: 480, easing: 'cubic-bezier(.2,.7,.2,1)', ...options });
+      this.animations.add(animation);
+      animation.finished.then(() => this.animations.delete(animation), () => this.animations.delete(animation));
+      return animation;
+    }
+    updateDescription(expanded = this.descriptionExpanded || false, animate = false) {
+      const wrap = this.querySelector('[data-description-wrap]');
+      if (!wrap) return;
+      const window = wrap.querySelector('[data-description-window]');
+      const content = wrap.querySelector('[data-description-content]');
+      const button = wrap.querySelector('[data-description-toggle]');
+      const preview = parseFloat(getComputedStyle(wrap).getPropertyValue('--description-preview-height')) || 190;
+      const fullHeight = Math.ceil(content.getBoundingClientRect().height);
+      const collapsible = fullHeight > preview + 8;
+      const currentHeight = window.getBoundingClientRect().height;
+      this.descriptionAnimation?.cancel();
+      this.descriptionExpanded = expanded && collapsible;
+      wrap.dataset.collapsible = String(collapsible);
+      wrap.dataset.expanded = String(this.descriptionExpanded);
+      button.hidden = !collapsible;
+      button.setAttribute('aria-expanded', String(this.descriptionExpanded));
+      button.querySelector('[data-description-label]').textContent = this.descriptionExpanded ? this.strings.show_less : this.strings.read_more;
+      const height = collapsible && !this.descriptionExpanded ? preview : fullHeight;
+      window.style.height = height + 'px';
+      this.descriptionInert.forEach(element => element.inert = false);
+      this.descriptionInert.clear();
+      if (collapsible && !this.descriptionExpanded) {
+        const top = content.getBoundingClientRect().top;
+        content.querySelectorAll('a,button,input,select,textarea,iframe,[tabindex]').forEach(element => {
+          if (!element.inert && element.getBoundingClientRect().bottom - top > preview - 38) {
+            element.inert = true;
+            this.descriptionInert.add(element);
+          }
+        });
+      }
+      if (animate) {
+        this.descriptionAnimation = this.animateElement(window, [{ height: currentHeight + 'px' }, { height: height + 'px' }], { duration: 620 });
+        if (!this.descriptionExpanded) this.descriptionAnimation?.finished.then(() => {
+          if (document.activeElement === button && button.getBoundingClientRect().top < 0) button.scrollIntoView({ block: 'center', behavior: this.motion.matches ? 'instant' : 'smooth' });
+        }).catch(() => {});
+      }
+    }
+    transitionItems(change) {
+      const previous = new Map();
+      if (!this.motion.matches) this.items.filter(item => !item.hidden).forEach(item => previous.set(item, item.getBoundingClientRect()));
+      change();
+      if (this.motion.matches) return;
+      this.items.filter(item => !item.hidden).forEach(item => {
+        const next = item.getBoundingClientRect();
+        if (next.bottom < 0 || next.top > innerHeight) return;
+        const before = previous.get(item);
+        if (!before) this.animateElement(item, [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'translateY(0)' }]);
+        else if (Math.abs(before.left - next.left) + Math.abs(before.top - next.top) > 1) this.animateElement(item, [{ transform: `translate(${before.left - next.left}px,${before.top - next.top}px)` }, { transform: 'translate(0,0)' }], { duration: 580 });
+      });
+    }
+    cartMotion(item, origin) {
+      const swatch = item.querySelector('.acla-family__swatch').getBoundingClientRect();
+      const source = swatch.bottom > 0 && swatch.top < innerHeight && !item.hidden ? swatch : origin?.getBoundingClientRect();
+      return { source, image: item.dataset.image, color: getComputedStyle(item).getPropertyValue('--family-swatch') };
+    }
+    animateCart(entries) {
+      if (this.motion.matches || !this.isConnected || !entries.length) return;
+      const destination = [...document.querySelectorAll('cart-icon,.header-actions a[href],.preview-cart')].find(element => {
+        if (element.matches('a') && new URL(element.href).pathname !== this.dataset.cartUrl) return false;
+        const box = element.getBoundingClientRect();
+        return box.width > 0 && box.height > 0 && box.top >= 0 && box.bottom <= innerHeight;
+      });
+      const target = destination?.getBoundingClientRect();
+      const endX = target ? target.left + target.width / 2 : innerWidth - 34;
+      const endY = target ? target.top + target.height / 2 : 34;
+      entries.slice(0, 3).forEach((entry, index) => {
+        const startX = Math.max(28, Math.min(innerWidth - 28, entry.source ? entry.source.left + entry.source.width / 2 : innerWidth / 2));
+        const startY = Math.max(28, Math.min(innerHeight - 28, entry.source ? entry.source.top + entry.source.height / 2 : innerHeight - 60));
+        const flight = document.createElement('div');
+        flight.className = 'acla-family__cart-flight';
+        flight.setAttribute('aria-hidden', 'true');
+        flight.setAttribute('popover', 'manual');
+        flight.style.left = startX - 24 + 'px';
+        flight.style.top = startY - 24 + 'px';
+        if (entry.image) {
+          const image = document.createElement('img');
+          image.src = entry.image;
+          image.alt = '';
+          flight.append(image);
+        } else {
+          flight.style.setProperty('--flight-color', entry.color || '#006b45');
+          flight.append(document.createElement('span'));
+        }
+        document.body.append(flight);
+        this.flights.add(flight);
+        try { flight.showPopover(); } catch { flight.removeAttribute('popover'); }
+        const dx = endX - startX;
+        const dy = endY - startY;
+        const animation = this.animateElement(flight, [
+          { opacity: 0, transform: 'translate(0,0) scale(.85)', offset: 0 },
+          { opacity: 1, transform: `translate(${dx * .18}px,${dy * .18 - 55}px) scale(1.08)`, offset: .22 },
+          { opacity: 1, transform: `translate(${dx * .78}px,${dy * .72 - 35}px) scale(.65)`, offset: .74 },
+          { opacity: 0, transform: `translate(${dx}px,${dy}px) scale(.15)`, offset: 1 }
+        ], { duration: 1450, delay: index * 140, fill: 'backwards' });
+        if (!animation) { flight.remove(); this.flights.delete(flight); return; }
+        animation.finished.then(() => {
+          if (index === Math.min(entries.length, 3) - 1) this.animateElement(destination, [{ transform: 'scale(1)' }, { transform: 'scale(1.18)', offset: .45 }, { transform: 'scale(1)' }]);
+        }).catch(() => {}).finally(() => { flight.remove(); this.flights.delete(flight); });
+      });
+    }
+
+    money(cents) { return this.formatter.format(Number(cents) / 100); }
+    quantity(item) { return Number(item.querySelector('[data-family-quantity]').value) || 0; }
+    maximum(item) {
+      let maximum = item.dataset.ruleMax ? Number(item.dataset.ruleMax) : Infinity;
+      if (item.hasAttribute('data-stock')) maximum = Math.min(maximum, Math.max(0, Number(item.dataset.stock) - Number(item.dataset.cartQuantity || 0)));
+      return maximum;
+    }
+    normalize(item, value) {
+      if (item.dataset.available !== 'true' || !Number.isFinite(value) || value <= 0) return 0;
+      const minimum = Number(item.dataset.ruleMin) || 1;
+      const increment = Number(item.dataset.ruleIncrement) || 1;
+      const maximum = this.maximum(item);
+      if (maximum < minimum) return 0;
+      const capped = Math.min(Math.max(value, minimum), maximum);
+      return minimum + Math.floor((capped - minimum) / increment) * increment;
+    }
+    setQuantity(item, value) {
+      item.querySelector('[data-family-quantity]').value = this.normalize(item, value);
+      this.updateSummary();
+    }
+    handleChange(event) {
+      const input = event.target;
+      if (input.matches('[data-family-quantity]')) this.setQuantity(input.closest('[data-family-item]'), Number(input.value));
+      if (input.matches('[data-family-sort]')) this.sortItems(input.value);
+      if (input.matches('[data-in-stock-only]')) this.filterItems();
+      if (input.matches('[data-selected-quantity]') && this.activeItem) {
+        input.value = this.normalize(this.activeItem, Number(input.value)) || Number(this.activeItem.dataset.ruleMin) || 1;
+      }
+    }
+    handleClick(event) {
+      const button = event.target.closest('button');
+      if (!button || !this.contains(button)) return;
+      const item = button.closest('[data-family-item]');
+      if (button.hasAttribute('data-description-toggle')) this.updateDescription(!this.descriptionExpanded, true);
+      if (button.hasAttribute('data-select-color')) this.selectColor(item);
+      if (button.hasAttribute('data-quantity-step')) {
+        const current = this.quantity(item);
+        const step = Number(item.dataset.ruleIncrement) || 1;
+        const minimum = Number(item.dataset.ruleMin) || 1;
+        let next = current + Number(button.dataset.quantityStep) * step;
+        if (current === 0 && Number(button.dataset.quantityStep) > 0) next = minimum;
+        if (next < minimum) next = 0;
+        this.setQuantity(item, next);
+      }
+      if (button.hasAttribute('data-family-view')) {
+        this.transitionItems(() => this.dataset.view = button.dataset.familyView);
+        this.querySelectorAll('[data-family-view]').forEach(control => control.setAttribute('aria-pressed', String(control === button)));
+      }
+      if (button.hasAttribute('data-clear-filters')) {
+        this.querySelector('[data-family-search]').value = '';
+        this.querySelector('[data-in-stock-only]').checked = false;
+        this.filterItems();
+      }
+      if (button.hasAttribute('data-clear-selection')) {
+        this.items.forEach(row => row.querySelector('[data-family-quantity]').value = 0);
+        this.updateSummary();
+      }
+      if (button.hasAttribute('data-close-selection')) {
+        this.querySelector('[data-color-selection]').hidden = true;
+        this.activeItem?.querySelector('[data-select-color]').focus({ preventScroll: true });
+        this.activeItem = null;
+        this.items.forEach(row => row.querySelector('[data-select-color]').setAttribute('aria-pressed', 'false'));
+      }
+      if (button.hasAttribute('data-add-selected')) this.addItems(this.items.filter(row => this.quantity(row) > 0).map(row => ({ item: row, quantity: this.quantity(row), batch: true })), button);
+      if (button.hasAttribute('data-add-single') && this.activeItem) {
+        const input = this.querySelector('[data-selected-quantity]');
+        if (!input.reportValidity()) return;
+        const quantity = this.normalize(this.activeItem, Number(input.value));
+        if (quantity < 1 || quantity !== Number(input.value)) return this.feedback(this.strings.quantity_error, true);
+        this.addItems([{ item: this.activeItem, quantity, batch: false }], button);
+      }
+      if (button.hasAttribute('data-gallery-image')) {
+        const image = this.querySelector('[data-main-image]');
+        image.src = button.dataset.galleryImage;
+        image.srcset = button.dataset.gallerySrcset;
+        image.alt = button.dataset.galleryAlt;
+        this.animateElement(image, [{ opacity: .35 }, { opacity: 1 }]);
+        this.querySelectorAll('[data-gallery-image]').forEach(thumbnail => thumbnail.setAttribute('aria-pressed', String(thumbnail === button)));
+      }
+      if (button.hasAttribute('data-open-image')) {
+        const image = this.querySelector('[data-main-image]');
+        if (!image) return;
+        const zoom = this.querySelector('[data-zoom-image]');
+        zoom.src = image.currentSrc || image.src;
+        zoom.alt = image.alt;
+        this.querySelector('[data-image-dialog]').showModal();
+      }
+      if (button.hasAttribute('data-close-image')) this.querySelector('[data-image-dialog]').close();
+    }
+    selectColor(item) {
+      this.activeItem = item;
+      const panel = this.querySelector('[data-color-selection]');
+      panel.hidden = false;
+      this.animateElement(panel, [{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'translateY(0)' }]);
+      panel.querySelector('[data-selected-name]').textContent = item.dataset.name;
+      panel.querySelector('[data-selected-sku]').textContent = item.dataset.sku;
+      panel.querySelector('[data-selected-price]').textContent = this.money(item.dataset.price);
+      panel.querySelector('[data-selected-link]').href = item.dataset.url;
+      panel.querySelector('acla-cart-status')?.setAttribute('data-cart-product-ids', JSON.stringify([item.dataset.productId]));
+      const image = panel.querySelector('[data-selected-image]');
+      image.hidden = !item.dataset.image;
+      if (item.dataset.image) image.src = item.dataset.image;
+      image.alt = item.dataset.imageAlt || item.dataset.name;
+      panel.querySelector('[data-selected-quantity]').value = Number(item.dataset.ruleMin) || 1;
+      this.items.forEach(row => row.querySelector('[data-select-color]').setAttribute('aria-pressed', String(row === item)));
+      this.updateSummary();
+      panel.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'center' });
+    }
+    filterItems() {
+      const normalize = value => value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+      const query = normalize(this.querySelector('[data-family-search]')?.value.trim() || '');
+      const onlyStock = this.querySelector('[data-in-stock-only]')?.checked;
+      let shown = 0;
+      this.transitionItems(() => this.items.forEach(item => {
+        const available = item.dataset.available === 'true' && this.maximum(item) >= Number(item.dataset.ruleMin || 1);
+        const visible = normalize(item.dataset.search).includes(query) && (!onlyStock || available);
+        item.hidden = !visible;
+        if (visible) shown++;
+      }));
+      const count = this.querySelector('[data-result-count]');
+      if (count) count.textContent = this.strings.results.replace('[shown]', shown).replace('[total]', this.items.length);
+      const empty = this.querySelector('[data-empty-results]');
+      if (empty) empty.hidden = shown > 0;
+    }
+    sortItems(order) {
+      const sorted = [...this.items].sort((a, b) => {
+        if (order === 'name') return a.dataset.name.localeCompare(b.dataset.name, this.dataset.locale);
+        if (order === 'price_asc') return Number(a.dataset.price) - Number(b.dataset.price);
+        if (order === 'price_desc') return Number(b.dataset.price) - Number(a.dataset.price);
+        return Number(a.dataset.position) - Number(b.dataset.position);
+      });
+      this.transitionItems(() => this.querySelector('[data-family-items]').append(...sorted));
+    }
+    updateSummary() {
+      let count = 0;
+      let total = 0;
+      let invalid = false;
+      this.items.forEach(item => {
+        const quantity = this.quantity(item);
+        if (!Number.isInteger(quantity) || this.normalize(item, quantity) !== quantity) invalid = true;
+        const maximum = this.maximum(item);
+        const minimum = Number(item.dataset.ruleMin) || 1;
+        const increment = Number(item.dataset.ruleIncrement) || 1;
+        const available = item.dataset.available === 'true' && maximum >= minimum;
+        const input = item.querySelector('[data-family-quantity]');
+        input.disabled = this.pending || !available || this.uncertain;
+        if (Number.isFinite(maximum)) input.max = maximum;
+        else input.removeAttribute('max');
+        item.querySelector('[data-quantity-step="-1"]').disabled = this.pending || quantity === 0 || this.uncertain;
+        item.querySelector('[data-quantity-step="1"]').disabled = this.pending || !available || (quantity > 0 && quantity + increment > maximum) || this.uncertain;
+        item.classList.toggle('is-selected', quantity > 0);
+        item.classList.toggle('is-in-cart', Number(item.dataset.cartQuantity || 0) > 0);
+        const stock = item.querySelector('[data-availability]');
+        if (item.dataset.available === 'true') stock.textContent = available ? this.strings.in_stock : this.strings.cart_limit;
+        stock.classList.toggle('acla-family__availability--unavailable', !available);
+        count += quantity;
+        total += quantity * Number(item.dataset.price);
+      });
+      const label = this.querySelector('[data-selected-count]');
+      if (!label) return;
+      label.textContent = this.strings.selected.replace('[count]', count);
+      this.querySelector('[data-selected-total]').textContent = this.money(total);
+      this.querySelector('[data-clear-selection]').disabled = this.pending || count === 0;
+      const add = this.querySelector('[data-add-selected]');
+      add.disabled = this.pending || count === 0 || invalid || this.uncertain;
+      add.textContent = this.pending ? this.strings.adding : this.strings.add_selected;
+      if (this.activeItem) {
+        const maximum = this.maximum(this.activeItem);
+        const available = this.activeItem.dataset.available === 'true' && maximum >= Number(this.activeItem.dataset.ruleMin || 1);
+        const single = this.querySelector('[data-add-single]');
+        single.disabled = this.pending || !available || this.uncertain;
+        single.textContent = this.pending ? this.strings.adding : this.strings.add_to_cart;
+        const input = this.querySelector('[data-selected-quantity]');
+        input.disabled = this.pending || !available || this.uncertain;
+        input.min = this.activeItem.dataset.ruleMin;
+        input.step = this.activeItem.dataset.ruleIncrement;
+        if (Number.isFinite(maximum)) input.max = maximum;
+        else input.removeAttribute('max');
+        this.querySelector('[data-selected-availability]').textContent = available ? this.strings.in_stock : this.strings.sold_out;
+      }
+    }
+    feedback(message, error = false) {
+      const box = this.querySelector('[data-family-feedback]');
+      box.hidden = false;
+      box.setAttribute('role', error ? 'alert' : 'status');
+      box.dataset.error = String(error);
+      box.textContent = message;
+      const link = document.createElement('a');
+      link.href = this.dataset.cartUrl;
+      link.textContent = this.strings.view_cart;
+      box.append(link);
+      this.animateElement(box, [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'translateY(0)' }]);
+    }
+    async refreshCart() {
+      const response = await fetch(this.dataset.cartUrl + '.js', { headers: { Accept: 'application/json' } });
+      if (!response.ok) throw new Error(this.strings.error);
+      return response.json();
+    }
+    cartQuantities(cart) {
+      const quantities = new Map();
+      for (const line of cart.items || []) {
+        const key = String(line.variant_id);
+        quantities.set(key, (quantities.get(key) || 0) + line.quantity);
+      }
+      return quantities;
+    }
+    syncCart(cart) {
+      const quantities = this.cartQuantities(cart);
+      this.items.forEach(item => {
+        item.dataset.cartQuantity = quantities.get(item.dataset.variantId) || 0;
+        const input = item.querySelector('[data-family-quantity]');
+        input.value = this.normalize(item, Number(input.value));
+      });
+      this.updateSummary();
+      this.filterItems();
+    }
+    async addItems(entries, origin) {
+      if (this.pending || this.uncertain || entries.length === 0) return;
+      const invalid = entries.some(({ item, quantity }) => !Number.isInteger(quantity) || this.normalize(item, quantity) !== quantity);
+      if (invalid) return this.feedback(this.strings.quantity_error, true);
+      const motion = new Map(entries.map(({ item }) => [item, this.cartMotion(item, origin)]));
+      this.pending = true;
+      this.updateSummary();
+      this.setAttribute('aria-busy', 'true');
+      let deferred;
+      let EventClass;
+      let before;
+      let attempted = false;
+      let cart;
+      let responseData;
+      let problem;
+      try {
+        before = await this.refreshCart();
+        const actual = this.cartQuantities(before);
+        const changed = entries.some(({ item, quantity }) => item.hasAttribute('data-stock') && Number(item.dataset.stock) - (actual.get(item.dataset.variantId) || 0) < quantity);
+        if (changed) {
+          this.syncCart(before);
+          throw new Error(this.strings.quantity_error);
+        }
+        try {
+          ({ CartLinesUpdateEvent: EventClass } = await import('@shopify/events'));
+          deferred = EventClass.createPromise();
+          this.dispatchEvent(new EventClass({ action: 'add', context: 'product', lines: entries.map(({ item, quantity }) => ({ merchandiseId: item.dataset.variantId, quantity })), promise: deferred.promise }));
+        } catch { EventClass = null; }
+        const sections = [...new Set([...document.querySelectorAll('cart-items-component[data-section-id]')].map(element => element.dataset.sectionId))].filter(Boolean).slice(0, 5);
+        const payload = { items: entries.map(({ item, quantity }) => ({ id: Number(item.dataset.variantId), quantity })) };
+        if (sections.length) {
+          payload.sections = sections;
+          payload.sections_url = location.pathname;
+        }
+        attempted = true;
+        const response = await fetch(this.dataset.cartAddUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(payload) });
+        responseData = await response.json();
+        if (!response.ok || responseData.status) throw new Error(typeof responseData.description === 'string' ? responseData.description : this.strings.error);
+      } catch (error) { problem = error; }
+      if (attempted) {
+        try { cart = await this.refreshCart(); }
+        catch {
+          this.uncertain = true;
+          problem = new Error(this.strings.uncertain);
+        }
+      }
+      if (cart && before) {
+        const previous = this.cartQuantities(before);
+        const current = this.cartQuantities(cart);
+        let added = 0;
+        const addedMotion = [];
+        for (const { item, quantity, batch } of entries) {
+          const delta = problem ? Math.max(0, (current.get(item.dataset.variantId) || 0) - (previous.get(item.dataset.variantId) || 0)) : quantity;
+          added += delta;
+          if (delta > 0) addedMotion.push(motion.get(item));
+          if (batch) item.querySelector('[data-family-quantity]').value = Math.max(0, this.quantity(item) - delta);
+        }
+        this.syncCart(cart);
+        deferred?.resolve({ cart: EventClass.createCartFromAjaxResponse(cart), detail: { source: this.id, sourceId: this.id, items: cart.items, itemCount: cart.item_count, sections: responseData?.sections, didError: Boolean(problem) } });
+        if (addedMotion.length) requestAnimationFrame(() => this.animateCart(addedMotion));
+        if (problem) this.feedback((added ? this.strings.partial + ' ' : '') + problem.message, true);
+        else this.feedback(added === 1 ? this.strings.added_one : this.strings.added_many.replace('[count]', added));
+      } else {
+        deferred?.reject(problem || new Error(this.strings.error));
+        this.feedback(problem?.message || this.strings.error, true);
+      }
+      this.pending = false;
+      this.removeAttribute('aria-busy');
+      this.updateSummary();
+    }
+  }
+  if (!customElements.get('acla-product-family')) customElements.define('acla-product-family', AclaProductFamily);
+{% endjavascript %}
+
+{% schema %}
+{
+  "name": "t:acla_family.section_name",
+  "tag": "section",
+  "class": "acla-product-family-section",
+  "enabled_on": { "templates": ["product"] },
+  "settings": [
+    { "type": "paragraph", "content": "t:acla_family.setup_help" },
+    { "type": "product_list", "id": "products", "label": "t:acla_family.products_label", "limit": 50, "info": "t:acla_family.products_help" },
+    { "type": "color", "id": "accent_color", "label": "t:acla_family.accent_label", "default": "#006b45" },
+    { "type": "select", "id": "default_view", "label": "t:acla_family.default_view_label", "options": [{ "value": "grid", "label": "t:acla_family.grid_label" }, { "value": "list", "label": "t:acla_family.list_label" }], "default": "grid" },
+    { "type": "range", "id": "padding_top", "label": "t:acla_family.padding_top_label", "min": 0, "max": 100, "step": 4, "unit": "px", "default": 32 },
+    { "type": "range", "id": "padding_bottom", "label": "t:acla_family.padding_bottom_label", "min": 0, "max": 100, "step": 4, "unit": "px", "default": 48 }
+  ],
+  "blocks": [
+    { "type": "@app" },
+    { "type": "question", "name": "t:acla_family.question_block", "settings": [
+      { "type": "text", "id": "question", "label": "t:acla_family.question_label" },
+      { "type": "richtext", "id": "answer", "label": "t:acla_family.answer_label" }
+    ] }
+  ],
+  "presets": [{ "name": "t:acla_family.section_name" }]
+}
+{% endschema %}

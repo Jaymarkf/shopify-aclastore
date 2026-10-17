@@ -1,0 +1,57 @@
+{
+  "product": {
+    "id": "gid://shopify/Product/10258252136518",
+    "title": "OLO Premium Markers - Brush",
+    "variants": {
+      "nodes": [
+        {
+          "price": "4.10",
+          "compareAtPrice": null
+        }
+      ]
+    }
+  },
+  "collections": {
+    "nodes": [
+      {
+        "id": "gid://shopify/Collection/490398875718",
+        "title": "OLO Brush promotion",
+        "handle": "olo-brush-promotion",
+        "badge": {
+          "value": "Save 50%"
+        },
+        "enabled": {
+          "value": "true"
+        },
+        "products": {
+          "nodes": [
+            {
+              "id": "gid://shopify/Product/10258252136518",
+              "title": "OLO Premium Markers - Brush"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "metafieldDefinitions": {
+    "nodes": [
+      {
+        "id": "gid://shopify/MetafieldDefinition/311457579078",
+        "namespace": "custom",
+        "key": "promotion_badge",
+        "type": {
+          "name": "single_line_text_field"
+        }
+      },
+      {
+        "id": "gid://shopify/MetafieldDefinition/311457611846",
+        "namespace": "custom",
+        "key": "promotion_enabled",
+        "type": {
+          "name": "boolean"
+        }
+      }
+    ]
+  }
+}

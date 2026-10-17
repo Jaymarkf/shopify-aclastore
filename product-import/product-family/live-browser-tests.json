@@ -1,0 +1,25 @@
+{
+  "status": "passed",
+  "url": "https://c5p0rn-q5.myshopify.com/products/olo-premium-markers-brush",
+  "checks": [
+    "Shopify renders all 40 assigned individual products",
+    "Zero is available in the real group",
+    "Test browser has its own initially empty cart",
+    "Two independently stocked colors can be purchased",
+    "Search works with the real Shopify product data",
+    "Real list view shows SKU information",
+    "Shopify accepts the mixed-product cart request",
+    "The real cart contains two separate products",
+    "The parent display product is not in the cart",
+    "Horizon cart badge updates through the native cart event",
+    "Native cart drawer receives both product rows",
+    "Shopify prevents purchasing the display-only parent",
+    "Rejected parent does not alter the child-product cart",
+    "Color preview opens on the real page",
+    "Real page has no horizontal overflow on mobile",
+    "Real mobile list view fits the viewport",
+    "No JavaScript runtime errors on the real page"
+  ],
+  "errors": [],
+  "cartTest": "Two separate individual products were added in an isolated test browser; no orders were placed."
+}

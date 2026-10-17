@@ -1,0 +1,10 @@
+{
+    "definition":  {
+                       "name":  "Discount active (synced)",
+                       "ownerType":  "COLLECTION",
+                       "pin":  false,
+                       "description":  "Automatically follows the linked Shopify discount status. Activate or deactivate the offer under Discounts.",
+                       "namespace":  "custom",
+                       "key":  "promotion_enabled"
+                   }
+}

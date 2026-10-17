@@ -1,0 +1,12 @@
+{
+  "discountAutomaticBasicCreate": {
+    "automaticDiscountNode": {
+      "id": "gid://shopify/DiscountAutomaticNode/1618906742854",
+      "automaticDiscount": {
+        "title": "OLO Brush Save 50%",
+        "status": "ACTIVE"
+      }
+    },
+    "userErrors": []
+  }
+}

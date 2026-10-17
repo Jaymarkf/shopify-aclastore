@@ -1,0 +1,16 @@
+query ReadOloDiscounts {
+  discountNodes(first: 100, query: "method:automatic") {
+    nodes {
+      id
+      discount {
+        ... on DiscountAutomaticBasic {
+          title status startsAt endsAt
+          customerGets {
+            value { ... on DiscountPercentage { percentage } }
+            items { ... on DiscountCollections { collections(first: 10) { nodes { id title } } } }
+          }
+        }
+      }
+    }
+  }
+}

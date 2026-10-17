@@ -1,0 +1,126 @@
+{% doc %}
+  Renders an independently purchasable product in a product family.
+
+  @param {product} item_product - The individual product to display.
+  @param {string} family_id - A unique identifier for the family section.
+  @param {number} position - The product's position in the family.
+{% enddoc %}
+
+{% liquid
+  assign item_variant = item_product.selected_or_first_available_variant
+  assign color_name = item_product.title | split: ' - Color: ' | last
+  assign color_code = item_variant.sku
+  if color_code contains 'OMB-'
+    assign color_code = color_code | remove_first: 'OMB-'
+    unless color_code contains '-G'
+      assign color_code = color_code | replace: '-', '.'
+    endunless
+  endif
+  assign swatch = item_product.metafields.custom.swatch_color.value
+  assign rule_min = item_variant.quantity_rule.min | default: 1
+  assign rule_increment = item_variant.quantity_rule.increment | default: 1
+  assign already_in_cart = cart | item_count_for_variant: item_variant.id
+  assign image_alt = item_product.featured_image.alt | default: color_name
+  assign color_image_url = item_product.metafields.custom.color_image.value
+  if color_image_url == blank
+    if item_product.featured_image
+      assign color_image_url = item_product.featured_image | image_url: width: 720
+    endif
+  endif
+  assign orderable = false
+  if item_product.has_only_default_variant
+    if item_variant.available
+      assign orderable = true
+    endif
+  endif
+%}
+
+<li
+  class="acla-family__item{% if already_in_cart > 0 %} is-in-cart{% endif %}"
+  data-family-item
+  data-product-id="{{ item_product.id }}"
+  data-variant-id="{{ item_variant.id }}"
+  data-name="{{ color_name | escape }}"
+  data-code="{{ color_code | escape }}"
+  data-sku="{{ item_variant.sku | escape }}"
+  data-search="{{ item_product.title | append: ' ' | append: item_variant.sku | escape }}"
+  data-price="{{ item_variant.price }}"
+  data-position="{{ position }}"
+  data-available="{{ orderable }}"
+  data-rule-min="{{ rule_min }}"
+  data-rule-increment="{{ rule_increment }}"
+  data-rule-max="{{ item_variant.quantity_rule.max }}"
+  data-cart-quantity="{{ already_in_cart }}"
+  {% if item_variant.inventory_management != blank %}
+    {% if item_variant.inventory_policy == 'deny' %}
+      data-stock="{{ item_variant.inventory_quantity | at_least: 0 }}"
+    {% endif %}
+  {% endif %}
+  {% if color_image_url != blank %}
+    data-image="{{ color_image_url | escape }}"
+  {% endif %}
+  data-image-alt="{{ image_alt | escape }}"
+  data-url="{{ item_product.url }}"
+  style="{% if swatch != blank %}--family-swatch: {{ swatch }};{% endif %}"
+>
+  <button
+    class="acla-family__color"
+    type="button"
+    data-select-color
+    aria-pressed="false"
+    aria-controls="FamilySelection-{{ family_id }}"
+    aria-label="{{ 'acla_family.preview_color' | t: color: color_name | escape }}"
+  >
+    <span class="acla-family__swatch{% if swatch == blank %} acla-family__swatch--photo{% endif %}">
+      {% if swatch == blank %}
+        {% if item_product.featured_image %}
+          {{ item_product.featured_image | image_url: width: 160 | image_tag: loading: 'lazy', widths: '80, 160', sizes: '80px', alt: image_alt }}
+        {% endif %}
+      {% endif %}
+      <span class="acla-family__selected-mark" aria-hidden="true">✓</span>
+    </span>
+    <span class="acla-family__color-copy">
+      {% if color_code != blank %}<span class="acla-family__color-code">{{ color_code | escape }}</span>{% endif %}
+      <span class="acla-family__color-name">{{ color_name | escape }}</span>
+    </span>
+  </button>
+  <div class="acla-family__item-sku"><span>{{ 'acla_family.sku' | t }}</span> {{ item_variant.sku | escape }}</div>
+  <div class="acla-family__item-price">
+    {% if item_variant.compare_at_price > item_variant.price %}
+      <s>{{ item_variant.compare_at_price | money }}</s>
+    {% endif %}
+    <strong>{{ item_variant.price | money }}</strong>
+    <span>{{ 'acla_family.each' | t }}</span>
+  </div>
+  <div class="acla-family__stock-status">
+    <span class="acla-family__availability{% unless orderable %} acla-family__availability--unavailable{% endunless %}" data-availability>
+    {% if orderable %}
+      {{ 'acla_family.in_stock' | t }}
+    {% else %}
+      {% if item_product.has_only_default_variant %}
+        {{ 'acla_family.sold_out' | t }}
+      {% else %}
+        {{ 'acla_family.view_options' | t }}
+      {% endif %}
+    {% endif %}
+    </span>
+    {% render 'acla-cart-status', product_resource: item_product %}
+  </div>
+  <div class="acla-family__quantity" data-quantity-control>
+    <button type="button" data-quantity-step="-1" aria-label="{{ 'acla_family.decrease_color' | t: color: color_name | escape }}" disabled>−</button>
+    <input
+      type="number"
+      id="FamilyQuantity-{{ family_id }}-{{ item_product.id }}"
+      data-family-quantity
+      value="0"
+      min="0"
+      step="1"
+      inputmode="numeric"
+      autocomplete="off"
+      aria-label="{{ 'acla_family.quantity_color' | t: color: color_name | escape }}"
+      {% unless orderable %}disabled{% endunless %}
+    >
+    <button type="button" data-quantity-step="1" aria-label="{{ 'acla_family.increase_color' | t: color: color_name | escape }}"{% unless orderable %} disabled{% endunless %}>+</button>
+  </div>
+  <a class="acla-family__item-link" href="{{ item_product.url }}">{{ 'acla_family.item_details' | t }} <span aria-hidden="true">↗</span></a>
+</li>

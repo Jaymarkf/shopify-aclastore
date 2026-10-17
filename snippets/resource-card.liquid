@@ -72,6 +72,9 @@
       data-view-transition-to-main-product
     {% endif %}
   >
+    {% if resource_type == 'product' %}
+      <div class="acla-card-cart-status">{% render 'acla-cart-status', product_resource: resource %}</div>
+    {% endif %}
     {%- if resource_type == 'product' or single_thumbnail_collection -%}
       {% comment %}
         In a search context, product.featured_media is updated to reflect the most appropriate variant

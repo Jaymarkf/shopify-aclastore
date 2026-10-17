@@ -1,10 +1,23 @@
-
+{% doc %}
+  Renders a product card gallery with a color count for product families.
+{% enddoc %}
 
 {% assign product = closest.product %}
+{% liquid
+  assign family_product_count = product.metafields.custom.family_products.value | size
+  assign show_product_badge = false
+  if family_product_count > 0
+    assign show_product_badge = true
+  elsif product.available == false
+    assign show_product_badge = true
+  elsif product.compare_at_price > product.price
+    assign show_product_badge = true
+  endif
+%}
 
 {% capture children %}
   {% unless product == blank %}
-    {%- if product.available == false or product.compare_at_price > product.price -%}
+    {%- if show_product_badge -%}
       <div
         class="product-badges product-badges--{{ settings.badge_position }}"
         style="
@@ -15,10 +28,12 @@
         <div
           class="
             product-badges__badge product-badges__badge--rectangle
-            {% if product.available == false %} color-custom-badge-sold-out{% elsif product.compare_at_price > product.price %} color-custom-badge-sale{% endif %}
+            {% if family_product_count > 0 %} color-custom-badge-sale{% elsif product.available == false %} color-custom-badge-sold-out{% elsif product.compare_at_price > product.price %} color-custom-badge-sale{% endif %}
           "
         >
-          {%- if product.available == false -%}
+          {%- if family_product_count > 0 -%}
+            {{ 'acla_family.card_color_count' | t: count: family_product_count }}
+          {%- elsif product.available == false -%}
             {{ 'content.product_badge_sold_out' | t }}
           {%- elsif product.compare_at_price > product.price -%}
             {{ 'content.product_badge_sale' | t }}
@@ -26,9 +41,13 @@
         </div>
       </div>
     {%- endif -%}
-    {% if product.available and settings.quick_add or settings.mobile_quick_add %}
-      {% render 'quick-add', product: product, section_id: section.id %}
-    {% endif %}
+    {% unless family_product_count > 0 %}
+      {% if product.available %}
+        {% if settings.quick_add or settings.mobile_quick_add %}
+          {% render 'quick-add', product: product, section_id: section.id %}
+        {% endif %}
+      {% endif %}
+    {% endunless %}
   {% endunless %}
 {% endcapture %}
 

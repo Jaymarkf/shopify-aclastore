@@ -1,0 +1,20 @@
+{
+  "definition": {
+    "name": "Promotion badge text",
+    "namespace": "custom",
+    "key": "promotion_badge",
+    "type": "single_line_text_field",
+    "ownerType": "COLLECTION",
+    "pin": true,
+    "description": "Message displayed beside prices for products in this collection. For example: Save 20%. This is a display label and does not change prices.",
+    "access": {
+      "storefront": "PUBLIC_READ"
+    },
+    "validations": [
+      {
+        "name": "max",
+        "value": "100"
+      }
+    ]
+  }
+}

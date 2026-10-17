@@ -1,0 +1,37 @@
+{% doc %}
+  Renders the current cart quantity for a product or its linked family products.
+
+  @param {product} product_resource - The product whose cart quantity is shown
+
+  @example
+  {% render 'acla-cart-status', product_resource: product %}
+{% enddoc %}
+
+{% if product_resource != blank %}
+  {% liquid
+    assign cart_product_ids = product_resource.id | append: ''
+    assign cart_group_products = product_resource.metafields.custom.family_products.value
+    for cart_group_product in cart_group_products limit: 50
+      assign cart_product_ids = cart_product_ids | append: ',' | append: cart_group_product.id
+    endfor
+    assign cart_product_ids = cart_product_ids | split: ',' | uniq
+    assign cart_product_keys = cart_product_ids | join: '|' | prepend: '|' | append: '|'
+    assign cart_product_quantity = 0
+    for cart_line in cart.items
+      assign cart_product_key = cart_line.product_id | prepend: '|' | append: '|'
+      if cart_product_keys contains cart_product_key
+        assign cart_product_quantity = cart_product_quantity | plus: cart_line.quantity
+      endif
+    endfor
+  %}
+  <acla-cart-status
+    class="acla-cart-status"
+    data-cart-product-ids="{{ cart_product_ids | json | escape }}"
+    data-cart-quantity="{{ cart_product_quantity }}"
+    data-label="{{ 'acla_family.in_cart_count' | t: quantity: '[quantity]' | escape }}"
+    {% if cart_product_quantity == 0 %}hidden{% endif %}
+  >
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m4 10 4 4 8-8"/></svg>
+    <span data-cart-status-label>{{ 'acla_family.in_cart_count' | t: quantity: cart_product_quantity }}</span>
+  </acla-cart-status>
+{% endif %}

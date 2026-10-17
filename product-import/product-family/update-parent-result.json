@@ -1,0 +1,12 @@
+{
+  "productUpdate": {
+    "product": {
+      "id": "gid://shopify/Product/10258252136518",
+      "title": "OLO Premium Markers - Brush",
+      "handle": "olo-premium-markers-brush",
+      "templateSuffix": "product-family",
+      "status": "ACTIVE"
+    },
+    "userErrors": []
+  }
+}

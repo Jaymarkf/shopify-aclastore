@@ -1,0 +1,24 @@
+{
+  "sections": {
+    "main": {
+      "type": "acla-product-family",
+      "settings": {
+        "accent_color": "#006b45",
+        "default_view": "grid",
+        "padding_top": 32,
+        "padding_bottom": 48
+      },
+      "blocks": {
+        "how_to_choose": {
+          "type": "question",
+          "settings": {
+            "question": "How do I order several colors?",
+            "answer": "<p>Set a quantity underneath each color, then choose Add selected to cart. You can also click a color for a closer look and add it individually.</p>"
+          }
+        }
+      },
+      "block_order": ["how_to_choose"]
+    }
+  },
+  "order": ["main"]
+}

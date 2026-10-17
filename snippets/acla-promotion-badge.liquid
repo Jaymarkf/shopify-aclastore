@@ -1,0 +1,18 @@
+{% doc %}
+  Renders the first enabled promotion assigned through a product's collections.
+
+  @param {product} product_resource - The product whose promotion is shown
+
+  @example
+  {% render 'acla-promotion-badge', product_resource: product %}
+{% enddoc %}
+
+{% for promotion_collection in product_resource.collections %}
+  {% assign promotion_text = promotion_collection.metafields.custom.promotion_badge.value %}
+  {% if promotion_text != blank %}
+    {% if promotion_collection.metafields.custom.promotion_enabled.value == true %}
+      <span class="acla-promotion-badge">{{ promotion_text | escape }}</span>
+      {% break %}
+    {% endif %}
+  {% endif %}
+{% endfor %}

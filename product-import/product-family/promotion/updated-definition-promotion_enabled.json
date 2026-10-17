@@ -1,0 +1,10 @@
+{
+  "metafieldDefinitionUpdate": {
+    "updatedDefinition": {
+      "id": "gid://shopify/MetafieldDefinition/311457611846",
+      "name": "Discount active (synced)",
+      "key": "promotion_enabled"
+    },
+    "userErrors": []
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "metafieldsSet": {
+    "metafields": [
+      {
+        "id": "gid://shopify/Metafield/71293088104518",
+        "namespace": "custom",
+        "key": "promotion_enabled",
+        "value": "true"
+      }
+    ],
+    "userErrors": []
+  }
+}

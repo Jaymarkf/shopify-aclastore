@@ -1,0 +1,16 @@
+{
+  "status": "passed",
+  "checks": [
+    "Shopify preview renders all 40 individual products",
+    "Admin description retains its five opening bullets under the price",
+    "Product details tab is absent",
+    "Read more exposes the full Shopify description",
+    "Show less restores the compact description",
+    "Collapsed mobile page fits the viewport",
+    "Expanded mobile description fits the viewport",
+    "Color search still filters to Zero",
+    "No browser runtime errors"
+  ],
+  "errors": [],
+  "note": "Real local Shopify preview. No cart or admin mutations."
+}

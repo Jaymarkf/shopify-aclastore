@@ -1,0 +1,14 @@
+{
+  "definition": {
+    "name": "Color preview image",
+    "namespace": "custom",
+    "key": "color_image",
+    "type": "url",
+    "ownerType": "PRODUCT",
+    "pin": true,
+    "description": "Optional public image URL for this individual color in a product-family preview. Leave blank to use the product image.",
+    "access": {
+      "storefront": "PUBLIC_READ"
+    }
+  }
+}

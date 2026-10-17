@@ -1237,5 +1237,20 @@
     "when_will_order_arrive": "When will I get my order?",
     "where_are_products_made": "Where are your products manufactured?",
     "disclosures": "Disclosures"
+  },
+  "acla_family": {
+    "section_name": "Product family",
+    "setup_help": "Select individual products in the parent's Products in this group metafield. Their existing prices, SKUs, and inventory are used automatically. No variants are created.",
+    "products_label": "Fallback products",
+    "products_help": "Used only when this product has no Products in this group metafield. Select up to 50 products.",
+    "accent_label": "Accent color",
+    "default_view_label": "Default shopping view",
+    "grid_label": "Color grid",
+    "list_label": "Product list",
+    "padding_top_label": "Top spacing",
+    "padding_bottom_label": "Bottom spacing",
+    "question_block": "Question and answer",
+    "question_label": "Question",
+    "answer_label": "Answer"
   }
 }

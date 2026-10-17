@@ -1,0 +1,137 @@
+{
+    "collectionId":  "gid://shopify/Collection/490398875718",
+    "parentId":  "gid://shopify/Product/10258252136518",
+    "badgeText":  "Save 50%",
+    "enabled":  true,
+    "adminUrl":  "https://admin.shopify.com/store/c5p0rn-q5/collections/490398875718",
+    "assignedProducts":  [
+                             {
+                                 "id":  "gid://shopify/Product/10258252136518"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258165071942"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258165203014"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258165366854"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258165563462"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258165727302"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258165858374"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258165989446"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258166153286"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258166284358"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258166415430"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258166579270"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258166710342"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258166841414"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258166972486"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258167103558"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258167234630"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258167398470"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258167529542"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258167660614"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258167791686"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258167922758"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258168086598"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258168217670"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258168381510"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258168512582"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258168643654"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258168774726"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258168905798"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258169036870"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258169200710"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258169331782"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258169462854"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258169659462"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258169790534"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258169921606"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258170085446"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258170216518"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258170347590"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258170478662"
+                             },
+                             {
+                                 "id":  "gid://shopify/Product/10258170511430"
+                             }
+                         ],
+    "priceUnchanged":  true,
+    "automaticDiscountId":  "gid://shopify/DiscountAutomaticNode/1618906742854",
+    "discountAdminUrl":  "https://admin.shopify.com/store/c5p0rn-q5/discounts/1618906742854",
+    "percentage":  50,
+    "automaticDiscountActive":  true
+}

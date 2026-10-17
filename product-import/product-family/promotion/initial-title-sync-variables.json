@@ -1,0 +1,18 @@
+{
+    "metafields":  [
+                       {
+                           "ownerId":  "gid://shopify/Collection/490398875718",
+                           "key":  "promotion_badge",
+                           "namespace":  "custom",
+                           "value":  "OLO Brush Save 50%",
+                           "type":  "single_line_text_field"
+                       },
+                       {
+                           "ownerId":  "gid://shopify/Collection/490398875718",
+                           "key":  "promotion_enabled",
+                           "namespace":  "custom",
+                           "value":  "true",
+                           "type":  "boolean"
+                       }
+                   ]
+}

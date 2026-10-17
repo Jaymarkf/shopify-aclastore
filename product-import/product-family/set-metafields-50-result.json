@@ -1,0 +1,157 @@
+{
+  "metafieldsSet": {
+    "metafields": [
+      {
+        "id": "gid://shopify/Metafield/71291485618246",
+        "namespace": "custom",
+        "key": "swatch_color",
+        "value": "#95334a"
+      },
+      {
+        "id": "gid://shopify/Metafield/71291485651014",
+        "namespace": "custom",
+        "key": "color_image",
+        "value": "https://cdn.shopify.com/s/files/1/0646/6771/3754/products/Artboard_114_2166a30c-3420-42ab-b21a-11eddb1f5f22.png?v=1656114929"
+      },
+      {
+        "id": "gid://shopify/Metafield/71291485683782",
+        "namespace": "custom",
+        "key": "swatch_color",
+        "value": "#5e4f4e"
+      },
+      {
+        "id": "gid://shopify/Metafield/71291485716550",
+        "namespace": "custom",
+        "key": "color_image",
+        "value": "https://cdn.shopify.com/s/files/1/0646/6771/3754/products/Artboard_118_f4f62dff-dab8-4369-b231-1b6693c44d06.png?v=1656641769"
+      },
+      {
+        "id": "gid://shopify/Metafield/71291485749318",
+        "namespace": "custom",
+        "key": "swatch_color",
+        "value": "#f17bb1"
+      },
+      {
+        "id": "gid://shopify/Metafield/71291485782086",
+        "namespace": "custom",
+        "key": "color_image",
+        "value": "https://cdn.shopify.com/s/files/1/0646/6771/3754/products/Artboard_122_e67dcb87-780b-4e2f-ad3c-c1036287a10b.png?v=1656115838"
+      },
+      {
+        "id": "gid://shopify/Metafield/71291485814854",
+        "namespace": "custom",
+        "key": "swatch_color",
+        "value": "#e636a4"
+      },
+      {
+        "id": "gid://shopify/Metafield/71291485847622",
+        "namespace": "custom",
+        "key": "color_image",
+        "value": "https://cdn.shopify.com/s/files/1/0646/6771/3754/files/B_RV13_SWATCH_1200X1200_5fa6d889-67e3-445a-93dd-97824c2d5130.jpg?v=1716100964"
+      },
+      {
+        "id": "gid://shopify/Metafield/71291485880390",
+        "namespace": "custom",
+        "key": "swatch_color",
+        "value": "#dbb8d7"
+      },
+      {
+        "id": "gid://shopify/Metafield/71291485913158",
+        "namespace": "custom",
+        "key": "color_image",
+        "value": "https://cdn.shopify.com/s/files/1/0646/6771/3754/products/Artboard_127_36338720-c3e1-48ac-acdf-f51e7f2d3590.png?v=1656116146"
+      },
+      {
+        "id": "gid://shopify/Metafield/71291485945926",
+        "namespace": "custom",
+        "key": "swatch_color",
+        "value": "#542560"
+      },
+      {
+        "id": "gid://shopify/Metafield/71291485978694",
+        "namespace": "custom",
+        "key": "color_image",
+        "value": "https://cdn.shopify.com/s/files/1/0646/6771/3754/products/Artboard_131_7907b0c0-a42a-4d7d-bdae-e15b7681721b.png?v=1656116455"
+      },
+      {
+        "id": "gid://shopify/Metafield/71291486011462",
+        "namespace": "custom",
+        "key": "swatch_color",
+        "value": "#9d749a"
+      },
+      {
+        "id": "gid://shopify/Metafield/71291486044230",
+        "namespace": "custom",
+        "key": "color_image",
+        "value": "https://cdn.shopify.com/s/files/1/0646/6771/3754/products/Artboard_135_08e87cce-2ca9-434a-814f-82ab85ab1047.png?v=1656116827"
+      },
+      {
+        "id": "gid://shopify/Metafield/71291486076998",
+        "namespace": "custom",
+        "key": "swatch_color",
+        "value": "#a39b9a"
+      },
+      {
+        "id": "gid://shopify/Metafield/71291486109766",
+        "namespace": "custom",
+        "key": "color_image",
+        "value": "https://cdn.shopify.com/s/files/1/0646/6771/3754/products/Artboard_139_9cde88be-8d60-4d2c-8353-785d1f0f12e4.png?v=1656117152"
+      },
+      {
+        "id": "gid://shopify/Metafield/71291486142534",
+        "namespace": "custom",
+        "key": "swatch_color",
+        "value": "#fbf7ac"
+      },
+      {
+        "id": "gid://shopify/Metafield/71291486175302",
+        "namespace": "custom",
+        "key": "color_image",
+        "value": "https://cdn.shopify.com/s/files/1/0646/6771/3754/products/Artboard_143_03df45b4-6a38-4f61-916e-e654b22dae37.png?v=1656117464"
+      },
+      {
+        "id": "gid://shopify/Metafield/71291486208070",
+        "namespace": "custom",
+        "key": "swatch_color",
+        "value": "#fbe541"
+      },
+      {
+        "id": "gid://shopify/Metafield/71291486240838",
+        "namespace": "custom",
+        "key": "color_image",
+        "value": "https://cdn.shopify.com/s/files/1/0646/6771/3754/products/Artboard_147_e209fce2-1b4b-4e79-8390-a06bf84b9ba8.png?v=1656118001"
+      },
+      {
+        "id": "gid://shopify/Metafield/71291486273606",
+        "namespace": "custom",
+        "key": "swatch_color",
+        "value": "#216306"
+      },
+      {
+        "id": "gid://shopify/Metafield/71291486306374",
+        "namespace": "custom",
+        "key": "color_image",
+        "value": "https://cdn.shopify.com/s/files/1/0646/6771/3754/files/B_YG16_SWATCH_1200X1200_877b0e18-4675-43cb-a9e2-6720cfc12dfd.jpg?v=1716101894"
+      },
+      {
+        "id": "gid://shopify/Metafield/71291486339142",
+        "namespace": "custom",
+        "key": "swatch_color",
+        "value": "#dad4ad"
+      },
+      {
+        "id": "gid://shopify/Metafield/71291486371910",
+        "namespace": "custom",
+        "key": "color_image",
+        "value": "https://cdn.shopify.com/s/files/1/0646/6771/3754/files/B_YG82_SWATCH_1200X1200_59609fe0-20a2-4aca-a4ea-0642c89d5772.jpg?v=1716101991"
+      },
+      {
+        "id": "gid://shopify/Metafield/71291486404678",
+        "namespace": "custom",
+        "key": "swatch_color",
+        "value": "#ede7ce"
+      }
+    ],
+    "userErrors": []
+  }
+}

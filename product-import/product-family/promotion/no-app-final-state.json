@@ -1,0 +1,30 @@
+{
+  "discountNode": {
+    "discount": {
+      "title": "OLO Brush Save 50%",
+      "status": "ACTIVE",
+      "startsAt": "2026-10-17T07:20:39Z",
+      "endsAt": null,
+      "customerGets": {
+        "items": {
+          "collections": {
+            "nodes": [
+              {
+                "id": "gid://shopify/Collection/490398875718"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "collection": {
+    "id": "gid://shopify/Collection/490398875718",
+    "titleCopy": {
+      "value": "OLO Brush Save 50%"
+    },
+    "activeCopy": {
+      "value": "true"
+    }
+  }
+}

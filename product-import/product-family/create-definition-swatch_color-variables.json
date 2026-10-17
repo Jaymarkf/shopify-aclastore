@@ -1,0 +1,14 @@
+{
+  "definition": {
+    "name": "Color swatch",
+    "namespace": "custom",
+    "key": "swatch_color",
+    "type": "color",
+    "ownerType": "PRODUCT",
+    "pin": true,
+    "description": "Optional color shown for this individual product in a product-family grid.",
+    "access": {
+      "storefront": "PUBLIC_READ"
+    }
+  }
+}

@@ -1,0 +1,6 @@
+mutation UpdateFamilyParent($product: ProductUpdateInput!) {
+  productUpdate(product: $product) {
+    product { id title handle templateSuffix status }
+    userErrors { field message }
+  }
+}

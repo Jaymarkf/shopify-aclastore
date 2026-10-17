@@ -1,0 +1,24 @@
+{
+  "input": {
+    "title": "OLO Brush promotion",
+    "handle": "olo-brush-promotion",
+    "sortOrder": "MANUAL",
+    "products": [
+      "gid://shopify/Product/10258252136518"
+    ],
+    "metafields": [
+      {
+        "namespace": "custom",
+        "key": "promotion_badge",
+        "type": "single_line_text_field",
+        "value": "Save 50%"
+      },
+      {
+        "namespace": "custom",
+        "key": "promotion_enabled",
+        "type": "boolean",
+        "value": "false"
+      }
+    ]
+  }
+}

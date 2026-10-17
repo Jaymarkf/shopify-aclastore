@@ -1,0 +1,11 @@
+{
+  "metafields": [
+    {
+      "ownerId": "gid://shopify/Collection/490398875718",
+      "namespace": "custom",
+      "key": "promotion_enabled",
+      "type": "boolean",
+      "value": "true"
+    }
+  ]
+}

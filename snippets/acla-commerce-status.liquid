@@ -1,0 +1,57 @@
+{% doc %}
+  Supplies shared promotion and cart-status styles and the initial cart snapshot.
+
+  @example
+  {% render 'acla-commerce-status' %}
+{% enddoc %}
+
+<script type="application/json" data-acla-cart-snapshot data-cart-url="{{ routes.cart_url }}.js">
+  {"items":[{% for status_line in cart.items %}{% unless forloop.first %},{% endunless %}{"product_id":{{ status_line.product_id | json }},"variant_id":{{ status_line.variant_id | json }},"quantity":{{ status_line.quantity | json }}}{% endfor %}]}
+</script>
+
+{% stylesheet %}
+  .acla-cart-status.acla-cart-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    width: fit-content;
+    max-width: 100%;
+    padding: 4px 8px;
+    border: 1px solid color-mix(in srgb, var(--color-success, #006400) 25%, transparent);
+    border-radius: 5px;
+    color: var(--color-success, #006400);
+    background: color-mix(in srgb, var(--color-success, #006400) 7%, var(--color-background, #fff));
+    font-family: var(--font-body--family, sans-serif);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: normal;
+    overflow-wrap: anywhere;
+  }
+  .acla-cart-status[hidden] { display: none !important; }
+  .acla-cart-status svg { width: 15px; height: 15px; flex-shrink: 0; }
+  .acla-cart-status [data-cart-status-label] { font: inherit; color: inherit; }
+  .acla-promotion-badge.acla-promotion-badge {
+    display: inline-block;
+    max-width: 100%;
+    padding: 5px 10px;
+    border-radius: 5px;
+    color: var(--color-error, #8b0000);
+    background: color-mix(in srgb, var(--color-error, #8b0000) 7%, var(--color-background, #fff));
+    font-family: var(--font-body--family, sans-serif);
+    font-size: 13px;
+    font-weight: 650;
+    line-height: 1.5;
+    letter-spacing: normal;
+    overflow-wrap: anywhere;
+  }
+  [ref="priceContainer"] > .acla-promotion-badge { margin-inline-start: 8px; vertical-align: middle; }
+  [ref="priceContainer"] > .acla-cart-status { margin-block-start: 6px; }
+  .product-card, .resource-card__media { position: relative; }
+  .product-card [ref="priceContainer"] > .acla-cart-status,
+  .resource-card [ref="priceContainer"] > .acla-cart-status { display: none !important; }
+  .acla-card-cart-status { position: absolute; inset-block-start: 10px; inset-inline-end: 10px; z-index: 2; max-width: calc(100% - 20px); pointer-events: none; }
+  .acla-family__hero-price { flex-wrap: wrap; }
+  .acla-family__item.is-in-cart .acla-family__selected-mark { display: grid; }
+  .acla-family__stock-status { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+{% endstylesheet %}

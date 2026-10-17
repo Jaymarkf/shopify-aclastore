@@ -1,0 +1,37 @@
+{
+  "product": {
+    "title": "OLO Premium Markers - Brush",
+    "handle": "olo-premium-markers-brush",
+    "vendor": "OLO",
+    "productType": "Marker collections",
+    "status": "DRAFT",
+    "templateSuffix": "product-family",
+    "descriptionHtml": "<p>Explore OLO’s premium alcohol-based brush markers and build your own color palette. The patented free-flow ink system delivers a smooth, controlled flow, while the flexible brush nib makes it easy to vary your stroke.</p><ul><li>2 ml of ink in each half marker</li><li>Flexible brush nib</li><li>Use an OLO Connector Ring to combine two half markers</li><li>Made in Japan</li></ul>",
+    "seo": {
+      "title": "OLO Premium Brush Markers | Shop Individual Colors",
+      "description": "Explore OLO premium alcohol-based brush markers. Choose individual colors, compare shades, and add your favorite colors to one order."
+    },
+    "tags": [
+      "OLO",
+      "Brush markers",
+      "Product family"
+    ]
+  },
+  "media": [
+    {
+      "originalSource": "https://cdn11.bigcommerce.com/s-mpz8cpc433/products/214/images/505/0037146_olo-premium-markers-brush_1__73754.1770940580.386.513.jpg?c=1",
+      "mediaContentType": "IMAGE",
+      "alt": "OLO premium brush marker"
+    },
+    {
+      "originalSource": "https://cdn.shopify.com/s/files/1/0646/6771/3754/products/Artboard_103_12bc871e-7df2-4127-806e-588d512c6b61.png?v=1656484619",
+      "mediaContentType": "IMAGE",
+      "alt": "OLO premium brush marker"
+    },
+    {
+      "originalSource": "https://cdn.shopify.com/s/files/1/0646/6771/3754/products/OLO_zerobH.jpg?v=1656646711",
+      "mediaContentType": "IMAGE",
+      "alt": "OLO Zero colorless marker"
+    }
+  ]
+}

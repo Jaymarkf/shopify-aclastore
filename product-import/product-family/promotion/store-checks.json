@@ -1,0 +1,29 @@
+{
+    "status":  "failed",
+    "checks":  [
+                   "Product title is smaller and bold",
+                   "Admin-managed Save 50% badge appears after the parent price",
+                   "Isolated browser starts with an empty cart",
+                   "Two colors are added as separate cart items",
+                   "Shopify automatically discounts both $4.10 colors to $2.05",
+                   "Discounted total is $4.10 for two colors",
+                   "Real cart allocations name the OLO automatic discount",
+                   "OMB-B0-2: in-cart quantity and check mark persist after adding",
+                   "OMB-ZERO: in-cart quantity and check mark persist after adding",
+                   "Title and promo fit mobile width",
+                   "Mobile list fits with the persistent cart badge",
+                   "Normal product page shows its existing cart quantity",
+                   "Category product card totals the two linked cart colors",
+                   "Category card shows one visible in-cart indicator",
+                   "Search product card shows existing cart quantity",
+                   "Changing quantity in the normal cart persists on the family page",
+                   "No storefront JavaScript runtime errors"
+               ],
+    "errors":  [
+                   "Section sections--24212688371782__header_section not found in the section rendering response"
+               ],
+    "error":  "Isolated test cart is empty after cleanup",
+    "featureStatus":  "passed",
+    "cleanupVerified":  false,
+    "note":  "All recorded storefront feature checks passed. The only failed assertion was verifying an empty isolated test cart after cleanup: the development proxy returned no cart JSON. No order was placed and no existing shopper cart was used."
+}

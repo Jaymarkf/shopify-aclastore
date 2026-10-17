@@ -125,6 +125,8 @@
     -%}
     {% render 'unit-price', price: unit_price, measurement: selected_variant.unit_price_measurement %}
   {%- endif -%}
+  {% render 'acla-promotion-badge', product_resource: product_resource %}
+  {% render 'acla-cart-status', product_resource: product_resource %}
 </div>
 {%- if has_volume_pricing -%}
   <small
