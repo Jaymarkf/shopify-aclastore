@@ -1,0 +1,16 @@
+{
+    "sourceRecords":  2547,
+    "standaloneProducts":  2534,
+    "additionalImageRows":  13,
+    "outputColumns":  26,
+    "omittedEmptyColumns":  31,
+    "activeProducts":  2103,
+    "draftProducts":  431,
+    "missingPriceProducts":  33,
+    "correctedSeoTitles":  8,
+    "reviewIssues":  1707,
+    "changedCells":  18742,
+    "sourceSha256":  "72E77714D107F79AB0AB2F11D0E7B084FF204842D051A69B98FD7E3F362CA503",
+    "correctedSha256":  "116EC7FDB699A89DF6D9FC10D30CE08247EED69A9144BAE8B4DB952A5795114F",
+    "validation":  "PASS: strict CSV parsing, single default variant per handle, image grouping, preserved data, prices, UTF-8/LF, original file unchanged"
+}
