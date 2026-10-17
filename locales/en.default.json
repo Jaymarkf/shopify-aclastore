@@ -372,6 +372,16 @@
       "sticky_add_to_cart": "Quick add to cart bar"
     }
   },
+  "acla_collections": {
+    "group_one": "product group shown",
+    "group_many": "product groups shown",
+    "sort_by": "Sort by",
+    "apply_sort": "Sort",
+    "load_more": "Show more product groups",
+    "loading": "Finding more product groups…",
+    "load_error": "We couldn’t load more groups. Please try again.",
+    "empty": "No product groups are available in this collection yet."
+  },
   "acla_family": {
     "in_cart_count": "In cart · {{ quantity }}",
     "breadcrumb": "Breadcrumb",

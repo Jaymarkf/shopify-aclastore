@@ -24,6 +24,21 @@ Each item keeps its existing SKU, price, inventory, and normal product page. Pro
 5. Select the individual items in **Products in this group**.
 6. Make the parent active and publish it to **Online Store**. The template displays the selected items' live prices and stock status, with a color-count badge on the parent's catalog card.
 
+## Show only groups in a brand collection
+
+This is already enabled on [OLO Brush promotion](https://c5p0rn-q5.myshopify.com/collections/olo-brush-promotion). It displays the OLO Brush parent while keeping all 41 collection members eligible for the existing discount.
+
+1. Open a collection under **Products → Collections**.
+2. Select **product-groups** under **Theme template**, then save.
+3. Add the parent products you want to display, such as **OLO Premium Markers - Brush**, to the collection.
+4. On each parent, assign its individual products under **Products in this group** and use the **product-family** product template.
+
+The collection now shows only products with assigned group items. Individual colors can remain members for automatic-discount eligibility without becoming separate cards on this collection page. Other collections using the default template keep their normal listings.
+
+When creating another group, add the parent to the collection and assign its items. The collection reads those assignments automatically; there is no list of product names in the theme code and no app to install. Clear all assignments to stop showing that parent. Sorting works on the collection's configured order; **Show more product groups** checks subsequent product pages when needed. The count describes the groups currently shown.
+
+For a future **OLO** navigation item, link it to a collection using **product-groups**. Navigation is managed separately under **Content → Menus**.
+
 ## Optional color previews
 
 On an individual product, use **Color swatch** for its grid color and **Color preview image** for a public image URL used in its expanded preview. Leave the image URL blank to use the normal product image. The sample uses colors sampled from OLO's official swatch artwork and OLO's corresponding marker images; screen colors are approximate.
@@ -40,6 +55,6 @@ See [Promotion badges and cart status](promotions-and-cart-status.md) for the OL
 
 ## Verification
 
-The six changed theme files were validated using Shopify's theme validator. Browser tests cover searching, sorting, quantities, multi-item cart requests, stock limits, error handling, image previews, and mobile overflow. Test reports and screenshots are in `product-import/product-family/`.
+The theme changes were validated using Shopify's theme validator. Browser checks covered searching, sorting, quantities, multi-item cart requests, stock limits, error handling, image previews, and mobile overflow. Temporary test scripts, reports, and screenshots were removed during cleanup. The Admin product mapping remains in `product-import/product-family/admin-setup-result.json`.
 
 The storefront password remains enabled. The theme-editor preview is available to the store owner without changing that setting.

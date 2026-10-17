@@ -1,1 +1,0 @@
-{"definition":{"namespace":"custom","key":"promotion_badge","ownerType":"COLLECTION","name":"Promotion badge text","description":"Text displayed beside product prices for this collection. Edit separately from the native Shopify Discount title. This label does not change prices.","pin":true,"validations":[{"name":"max","value":"255"}]}}

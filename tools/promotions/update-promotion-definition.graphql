@@ -1,6 +1,0 @@
-mutation UpdatePromotionDefinition($definition: MetafieldDefinitionUpdateInput!) {
-  metafieldDefinitionUpdate(definition: $definition) {
-    updatedDefinition { id name key }
-    userErrors { field message code }
-  }
-}

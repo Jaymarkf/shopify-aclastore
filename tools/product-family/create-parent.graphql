@@ -1,6 +1,0 @@
-mutation CreateFamilyParent($product: ProductCreateInput!, $media: [CreateMediaInput!]) {
-  productCreate(product: $product, media: $media) {
-    product { id title handle variants(first: 1) { nodes { id } } }
-    userErrors { field message }
-  }
-}

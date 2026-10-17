@@ -11,7 +11,7 @@ Edit the percentage, schedule, or eligibility here, or deactivate the discount. 
 ## Edit the OLO promotion
 
 1. Open [Products → Collections → OLO Brush promotion](https://admin.shopify.com/store/c5p0rn-q5/collections/490398875718).
-2. At the bottom, under **Metafields**, change **Promotion badge text**. It currently says **Save 50%**.
+2. At the bottom, under **Metafields**, change **Promotion badge text**. It currently says **OLO Brush Save 50%**.
 3. Turn **Show promotion badge** on or off, then save. It is currently on, as requested.
 4. Under **Products**, browse and add products to assign this message. Remove products to stop showing it for them.
 
@@ -23,7 +23,9 @@ The badge is display text. Shopify does not expose the automatic-discount config
 
 Create a manual collection under **Products → Collections**, add the products, and make the collection available on **Online Store**. Under **Discounts**, create an automatic **Amount off products** discount and choose that collection under **Applies to → Specific collections**. Fill in the collection's two badge metafields, then save. You can also use an existing collection. Keep each product in only one enabled promotion collection when you want a single predictable message; the theme displays the first enabled message it finds.
 
-The definitions are under **Settings → Custom data → Collections**: **Promotion badge text** and **Show promotion badge**. Badge text supports up to 100 characters and wraps on small screens.
+The definitions are under **Settings → Custom data → Collections**: **Promotion badge text** and **Show promotion badge**. Badge text supports up to 255 characters and wraps on small screens.
+
+No additional app installation is required. The hosted title-sync service was disabled and its Shopify credentials removed; no background sync schedule was created. The native discount title is shown automatically on discounted cart lines and at checkout. The product-price badge is edited separately using the fields above.
 
 ## In-cart quantities
 

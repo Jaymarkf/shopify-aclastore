@@ -1,6 +1,0 @@
-mutation SetFamilyParentVariant($productId: ID!, $variants: [ProductVariantsBulkInput!]!) {
-  productVariantsBulkUpdate(productId: $productId, variants: $variants) {
-    productVariants { id price inventoryPolicy }
-    userErrors { field message code }
-  }
-}

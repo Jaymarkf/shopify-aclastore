@@ -1238,6 +1238,10 @@
     "where_are_products_made": "Where are your products manufactured?",
     "disclosures": "Disclosures"
   },
+  "acla_collections": {
+    "section_name": "Product groups",
+    "setup_help": "Shows only products in this collection that have products assigned under Products in this group. Individual items stay available on their group pages. Add the parent product to this collection when creating a new group."
+  },
   "acla_family": {
     "section_name": "Product family",
     "setup_help": "Select individual products in the parent's Products in this group metafield. Their existing prices, SKUs, and inventory are used automatically. No variants are created.",

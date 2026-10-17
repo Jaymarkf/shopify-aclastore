@@ -11,3 +11,7 @@
 #
 # Ignore templates and sections with a regular expression:
 #   /(templates|sections)/.*\.json/
+
+# Local product-import deliverables and merchant setup guides
+product-import/**
+docs/**
