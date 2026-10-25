@@ -1,0 +1,50 @@
+{% comment %}
+  Container-aligned category grid. Merchants arrange independent image/link blocks.
+  @example Add Category tiles to Home page, then configure each Category tile.
+{% endcomment %}
+{% capture tiles %}{% content_for 'blocks' %}{% endcapture %}
+{% if tiles contains 'data-category-tile' or request.design_mode %}
+  <div
+    class="section section--page-width spacing-style acla-category-tiles"
+    style="{% render 'spacing-padding', settings: section.settings %}; --acla-tile-columns: {{ section.settings.columns }}; --acla-tile-mobile-columns: {{ section.settings.mobile_columns }}; --acla-tile-gap: {{ section.settings.gap }}px; --acla-tile-radius: {{ section.settings.corner_radius }}px; --acla-tile-ratio: {{ section.settings.image_ratio }};"
+  >
+    <nav class="acla-category-tiles__grid" aria-label="{{ 'acla_category_tiles.navigation' | t | escape }}">{{ tiles }}</nav>
+  </div>
+{% endif %}
+
+{% stylesheet %}
+  .acla-category-tiles__grid {
+    display: grid;
+    grid-template-columns: repeat(var(--acla-tile-columns), minmax(0, 1fr));
+    gap: var(--acla-tile-gap);
+    min-inline-size: 0;
+  }
+
+  @media (max-width: 749px) {
+    .acla-category-tiles__grid { grid-template-columns: repeat(var(--acla-tile-mobile-columns), minmax(0, 1fr)); gap: min(var(--acla-tile-gap), 16px); }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:acla_category_tiles.section_name",
+  "disabled_on": { "groups": ["header", "footer"] },
+  "max_blocks": 24,
+  "blocks": [{ "type": "acla-category-tile" }],
+  "settings": [
+    { "type": "range", "id": "columns", "label": "t:settings.columns", "min": 1, "max": 4, "step": 1, "default": 3 },
+    { "type": "select", "id": "mobile_columns", "label": "t:settings.mobile_columns", "options": [{ "value": "1", "label": "t:options.one_number" }, { "value": "2", "label": "t:options.two_number" }], "default": "2" },
+    { "type": "select", "id": "image_ratio", "label": "t:acla_category_tiles.image_shape", "options": [{ "value": "3 / 2", "label": "t:acla_category_tiles.landscape" }, { "value": "1", "label": "t:acla_category_tiles.square" }], "default": "3 / 2" },
+    { "type": "range", "id": "gap", "label": "t:settings.gap", "min": 0, "max": 40, "step": 1, "unit": "px", "default": 16 },
+    { "type": "range", "id": "corner_radius", "label": "t:settings.corner_radius", "min": 0, "max": 32, "step": 1, "unit": "px", "default": 12 },
+    { "type": "range", "id": "padding-block-start", "label": "t:settings.top", "min": 0, "max": 100, "step": 1, "unit": "px", "default": 16 },
+    { "type": "range", "id": "padding-block-end", "label": "t:settings.bottom", "min": 0, "max": 100, "step": 1, "unit": "px", "default": 16 }
+  ],
+  "presets": [{
+    "name": "t:acla_category_tiles.section_name",
+    "category": "t:categories.banners",
+    "blocks": { "tile_one": { "type": "acla-category-tile" }, "tile_two": { "type": "acla-category-tile" }, "tile_three": { "type": "acla-category-tile" } },
+    "block_order": ["tile_one", "tile_two", "tile_three"]
+  }]
+}
+{% endschema %}

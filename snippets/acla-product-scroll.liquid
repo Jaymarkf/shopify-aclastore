@@ -1,0 +1,68 @@
+{% doc %}
+  Floating product-page navigation in quarter-page steps, reversing at each end.
+  @example
+  {% render 'acla-product-scroll' %}
+{% enddoc %}
+<acla-product-scroll
+  class="acla-product-scroll"
+  data-down-label="{{ 'acla_scroll.down' | t | escape }}"
+  data-up-label="{{ 'acla_scroll.up' | t | escape }}"
+  hidden
+>
+  <button class="acla-product-scroll__button" type="button" ref="button" on:click="/step" aria-label="{{ 'acla_scroll.down' | t | escape }}">
+    <svg class="acla-product-scroll__arrow" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 4v15m-6-6 6 6 6-6"/></svg>
+    <span class="acla-product-scroll__progress" ref="progress" aria-hidden="true">0%</span>
+  </button>
+</acla-product-scroll>
+
+{% stylesheet %}
+  .acla-product-scroll {
+    position: fixed;
+    inset-inline-end: max(18px, env(safe-area-inset-right));
+    inset-block-end: calc(18px + env(safe-area-inset-bottom) + var(--acla-scroll-obstruction, 0px));
+    z-index: var(--layer-sticky);
+  }
+
+  .acla-product-scroll[hidden] { display: none; }
+  .acla-product-scroll:dir(rtl) { inset-inline-end: max(18px, env(safe-area-inset-left)); }
+
+  .acla-product-scroll__button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-inline-size: 48px;
+    min-block-size: 60px;
+    padding: 8px;
+    border: var(--style-border-width-primary) solid var(--color-primary-button-border);
+    border-radius: var(--style-border-radius-buttons-primary);
+    color: var(--color-primary-button-text);
+    background: var(--color-primary-button-background);
+    box-shadow: var(--shadow-button);
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .acla-product-scroll__button:hover {
+    color: var(--color-primary-button-hover-text);
+    background: var(--color-primary-button-hover-background);
+    border-color: var(--color-primary-button-hover-border);
+  }
+
+  .acla-product-scroll__button:focus-visible {
+    outline: var(--focus-outline-width) solid var(--color-primary-button-focus-outline);
+    outline-offset: var(--focus-outline-offset);
+  }
+
+  .acla-product-scroll__progress { font: 600 10px/1.2 var(--font-body--family); }
+  .acla-product-scroll__arrow { transition: transform var(--animation-speed-slow) var(--animation-timing-hover); }
+  .acla-product-scroll[data-direction="up"] .acla-product-scroll__arrow { transform: rotate(180deg); }
+
+  html[scroll-lock] .acla-product-scroll,
+  body:has(dialog[open], .page-wrapper--drawer-open) .acla-product-scroll { visibility: hidden; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .acla-product-scroll__arrow { transition: none; }
+  }
+{% endstylesheet %}

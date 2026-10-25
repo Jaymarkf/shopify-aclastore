@@ -570,6 +570,10 @@ class HeaderMenu extends Component {
     if (this.headerComponent.style.getPropertyValue('--full-open-header-height') !== fullOpenHeaderHeightValue) {
       this.headerComponent.style.setProperty('--full-open-header-height', fullOpenHeaderHeightValue);
     }
+    if (this.headerComponent.hasAttribute('data-group-background')) {
+      const extension = Math.max(0, fullOpenHeaderHeight - this.headerComponent.offsetHeight);
+      this.headerComponent.closest('#header-group')?.style.setProperty('--header-group-menu-extension', `${extension}px`);
+    }
   }
 
   /**

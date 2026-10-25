@@ -1,0 +1,16 @@
+{% layout none %}
+{% comment %}Resolve group badges from current cart products, never from a full group assignment list.{% endcomment %}
+{% capture memberships %}
+  {% assign membership_count = 0 %}
+  {% for line in cart.items %}
+    {% for source_collection in line.product.collections %}
+      {% assign parent = source_collection.metafields.custom.family_parent.value %}
+      {% if parent != blank %}
+        {% if membership_count > 0 %},{% endif %}
+        [{{ line.product_id | append: '' | json }},{{ parent.id | append: '' | json }}]
+        {% assign membership_count = membership_count | plus: 1 %}
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+{% endcapture %}
+<script type="application/json" data-family-memberships>[{{ memberships | replace: '<', '\u003c' }}]</script>

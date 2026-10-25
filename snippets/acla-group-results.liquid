@@ -1,0 +1,91 @@
+{% doc %}
+  Shared presentation for a group grid whose owning section renders its static product cards.
+  @param {section} section - Owning section.
+  @param {string} context - collection or search.
+  @param {string} children - Captured eligible product cards.
+  @param {number} group_count - Visible group count.
+  @param {product[]} candidates - Catalog page products.
+  @param {paginate} paginate - Native catalog pagination.
+  @param {string} sort_by - Current sort choice.
+  @example
+  {% render 'acla-group-results', section: section, context: 'collection', children: children, group_count: group_count, candidates: candidates, paginate: paginate, sort_by: sort_by %}
+{% enddoc %}
+{% if section.settings.background_color != blank %}
+  {% render 'contrast-override', background_color: section.settings.background_color, section_id: section.id %}
+{% endif %}
+<div class="section-background{% if section.settings.background_color != blank %} color-custom-{{ section.id }}{% endif %}"></div>
+{% if context == 'collection' %}<collection-component view-event-payload="{{ collection | standard_event_data: 'view' | escape }}">{% endif %}
+  <results-list
+    class="section acla-group-results product-grid-container{% if section.settings.background_color != blank %} color-custom-{{ section.id }}{% endif %}"
+    section-id="{{ section.id }}"
+    infinite-scroll="true"
+    style="--padding-block-start: {{ section.settings.padding-block-start }}px; --padding-block-end: {{ section.settings.padding-block-end }}px;"
+  >
+    {% render 'skip-to-content-link', href: '#ResultsList', text: 'accessibility.skip_to_results_list' %}
+    <div class="collection-wrapper grid">
+      <div class="acla-group-results__toolbar">
+        <p data-group-result-count role="status"><strong>{{ group_count }}</strong> {% if group_count == 1 %}{{ 'acla_collections.group_one' | t }}{% else %}{{ 'acla_collections.group_many' | t }}{% endif %}</p>
+        {% if context == 'collection' %}
+          <form action="{{ collection.url }}" method="get">
+            <label for="GroupSort-{{ section.id }}">{{ 'acla_collections.sort_by' | t }}</label>
+            <select name="sort_by" id="GroupSort-{{ section.id }}">
+              <option value="manual"{% if sort_by == 'manual' %} selected{% endif %}>{{ 'acla_family.sort_featured' | t }}</option>
+              <option value="title-ascending"{% if sort_by == 'title-ascending' %} selected{% endif %}>{{ 'acla_family.sort_name' | t }}</option>
+              <option value="price-ascending"{% if sort_by == 'price-ascending' %} selected{% endif %}>{{ 'acla_family.sort_price_low' | t }}</option>
+              <option value="price-descending"{% if sort_by == 'price-descending' %} selected{% endif %}>{{ 'acla_family.sort_price_high' | t }}</option>
+            </select>
+            <button class="button button-secondary" type="submit">{{ 'acla_collections.apply_sort' | t }}</button>
+          </form>
+        {% endif %}
+      </div>
+      {% if group_count > 0 %}
+        {% render 'product-grid', section: section, children: children, products: candidates, paginate: paginate, enable_infinite_scroll: true %}
+      {% else %}
+        <div class="acla-group-results__empty">
+          <p>{{ 'acla_catalog.empty' | t }}</p>
+          <a class="button button-secondary" href="{{ routes.all_products_collection_url }}">{{ 'acla_catalog.browse' | t }}</a>
+        </div>
+      {% endif %}
+      <noscript>{{ paginate | default_pagination }}</noscript>
+    </div>
+  </results-list>
+{% if context == 'collection' %}</collection-component>{% endif %}
+
+{% stylesheet %}
+  .acla-group-results {
+    display: block;
+    padding-block: var(--padding-block-start) var(--padding-block-end);
+  }
+  .acla-group-results__toolbar {
+    grid-column: var(--centered);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--gap-md);
+    padding-block: var(--padding-sm) var(--padding-lg);
+  }
+  .acla-group-results__toolbar p { margin: 0; }
+  .acla-group-results__toolbar form { display: flex; align-items: center; flex-wrap: wrap; gap: var(--gap-sm); }
+  .acla-group-results__toolbar select {
+    min-height: var(--minimum-touch-target);
+    padding: var(--padding-xs);
+    border: 1px solid var(--color-border);
+    border-radius: var(--style-border-radius-inputs);
+    background: var(--color-background);
+    color: inherit;
+    font: inherit;
+  }
+  .acla-group-results .main-collection-grid { display: block; }
+  .acla-group-results__empty { grid-column: var(--centered); padding-block: var(--padding-xl); text-align: center; }
+  @media (min-width: 750px) {
+    .acla-group-results > .collection-wrapper {
+      grid-template-columns: minmax(var(--page-margin), 1fr) repeat(12, minmax(0, calc(var(--full-page-grid-central-column-width) / 12))) minmax(var(--page-margin), 1fr);
+    }
+  }
+  @media (max-width: 749px) {
+    .acla-group-results__toolbar, .acla-group-results__empty { margin-inline: var(--page-margin); }
+    .acla-group-results__toolbar form { width: 100%; }
+    .acla-group-results__toolbar select { flex: 1; min-width: 0; }
+  }
+{% endstylesheet %}

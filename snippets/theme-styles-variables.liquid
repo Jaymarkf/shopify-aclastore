@@ -124,6 +124,8 @@
   %}
 
   :root {
+    --product-title-size: {{ settings.product_title_size | default: 30 }}px;
+    --product-title-mobile-size: {{ settings.product_title_mobile_size | default: 22 }}px;
     /* Safe area insets — non-zero on notched devices because meta-tags.liquid sets viewport-fit=cover */
     --safe-area-inset-top: env(safe-area-inset-top, 0px);
     --safe-area-inset-right: env(safe-area-inset-right, 0px);

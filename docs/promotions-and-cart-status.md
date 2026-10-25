@@ -1,31 +1,35 @@
-# Promotion badges and cart status
+# Savings badges and checkout offers
 
-The OLO Brush offer uses Shopify's native automatic discount, with a standard Shopify collection for eligible products and a shared storefront badge. No app or color variants are needed.
+## What shoppers see
 
-## Manage the real discount
+The main product-family price shows **Save up to XX% off List**, calculated from the highest savings among all assigned items. The lowest-to-highest range is available on hover; no extra line appears below the badge. Each individual item shows its own **Save XX% off List**. Groups without any savings have no calculated savings badge.
 
-Open [Discounts → OLO Brush Save 50%](https://admin.shopify.com/store/c5p0rn-q5/discounts/1618906742854). It is a real **50% amount off products** automatic discount, active now for all customers, with no minimum purchase, no end date, and no combinations with other discounts. It applies to the **OLO Brush promotion** collection, containing the 40 individually purchasable colors linked to the parent page and the display-only parent.
+List/reference price uses the item's **Compare-at price** when it is higher than Price. Otherwise it uses its regular **Price**. Percentages are rounded to whole numbers. Savings include the additional checkout percentage only for products in the collection selected below. Displayed product prices and selection subtotals stay before checkout discounts; Shopify calculates the actual cart/checkout totals.
 
-Edit the percentage, schedule, or eligibility here, or deactivate the discount. The original $4.10 product price remains unchanged; Shopify applies the 50% reduction automatically in the cart and checkout, making a qualifying marker $2.05. No discount code is needed.
+For the current OLO setup (256 items):
 
-## Edit the OLO promotion
+- 160 items: $4.10 regular price, less 50% at checkout = $2.05, **50% savings**.
+- 96 items: $4.50 Compare-at, $3.25 Price, then another 50% at checkout = approximately $1.63, **64% total savings** after rounding.
+- Main badge: **Save up to 64% off List**; hover range **50%–64%**. The checkout offer remains included in the calculation without an extra visible note.
 
-1. Open [Products → Collections → OLO Brush promotion](https://admin.shopify.com/store/c5p0rn-q5/collections/490398875718).
-2. At the bottom, under **Metafields**, change **Promotion badge text**. It currently says **OLO Brush Save 50%**.
-3. Turn **Show promotion badge** on or off, then save. It is currently on, as requested.
-4. Under **Products**, browse and add products to assign this message. Remove products to stop showing it for them.
+Sale savings and checkout percentages are applied sequentially, not added together. Actual checkout rounding can depend on quantities.
 
-The collection contains **OLO Premium Markers - Brush** plus its 40 linked individual colors. The message appears beside their prices and on catalog/search cards where a price is displayed. Adding/removing products in this collection changes both native discount eligibility and badge assignment.
+## Change product prices
 
-The badge is display text. Shopify does not expose the automatic-discount configuration to product-page Liquid, so editing or deactivating the discount does not automatically change this badge. When changing the offer, update **Promotion badge text** to match; when stopping the offer, switch **Show promotion badge** off. Native discount calculations come from the Discounts configuration above.
+In **Products**, edit each individual item's **Price** and **Compare-at price**, or use Shopify's bulk editor/CSV. Refresh the storefront to see updated savings. The main badge reads the complete assigned group, including items beyond the initially visible rows. Images and purchase details still load near the viewport.
 
-## Create another promotion
+## Manage the checkout offer
 
-Create a manual collection under **Products → Collections**, add the products, and make the collection available on **Online Store**. Under **Discounts**, create an automatic **Amount off products** discount and choose that collection under **Applies to → Specific collections**. Fill in the collection's two badge metafields, then save. You can also use an existing collection. Keep each product in only one enabled promotion collection when you want a single predictable message; the theme displays the first enabled message it finds.
+1. Manage the real offer under [Discounts](https://admin.shopify.com/store/c5p0rn-q5/discounts/1618906742854). Ensure the actual individual products belong to its eligible collections. Selecting a display-only parent does not make its assigned products eligible.
+2. Open **Online Store → Themes → Customize → Theme settings → Checkout savings badge**.
+3. Switch **Include checkout offer in savings** on, select **Eligible products collection**, and enter **Checkout discount percentage**. Current setting: **OLO Brush colors**, **50%**.
+4. Save. When the real offer changes, update this percentage/collection too. When it ends, turn the display setting off. Product sale savings from Compare-at prices continue to display.
 
-The definitions are under **Settings → Custom data → Collections**: **Promotion badge text** and **Show promotion badge**. Badge text supports up to 255 characters and wraps on small screens.
+These theme controls are **display only**. They do not create or edit the Shopify discount. Without an app/background sync, the theme cannot read or synchronize native discount settings or their titles. No app, service, or new metafield was added for this feature. Only use an unconditional percentage offer with matching eligibility; customer-specific, minimum-spend, quantity, or scheduled conditions require an appropriate display setup.
 
-No additional app installation is required. The hosted title-sync service was disabled and its Shopify credentials removed; no background sync schedule was created. The native discount title is shown automatically on discounted cart lines and at checkout. The product-price badge is edited separately using the fields above.
+The current native 50% automatic offer covers seven collections, including OLO Brush colors. COPIC's display parents are selected in some of those collections, but their individually purchasable children are not thereby eligible. The theme does not apply the OLO checkout percentage to those children.
+
+Existing collection **Promotion badge text** / **Show promotion badge** fields remain a fallback for unrelated individual products without calculated savings. Product families and products with calculated savings use the calculated labels instead of that static message.
 
 ## In-cart quantities
 

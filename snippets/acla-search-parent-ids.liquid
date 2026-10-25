@@ -1,0 +1,17 @@
+{%- doc -%}
+  Maps native search matches to their display groups without exposing individual cards.
+  @param {product[]} products - Native matching products.
+  @example
+  {% capture parent_ids %}{% render 'acla-search-parent-ids', products: search.results %}{% endcapture %}
+{%- enddoc -%}
+{%- for candidate in products -%}
+  {%- if candidate.object_type == 'product' or candidate.object_type == blank -%}
+    {%- capture count -%}{%- render 'acla-group-count', product_resource: candidate -%}{%- endcapture -%}
+    {%- assign count = count | plus: 0 -%}
+    {%- if count > 0 -%}|{{ candidate.id }}|{%- endif -%}
+    {%- for source in candidate.collections -%}
+      {%- assign parent = source.metafields.custom.family_parent.value -%}
+      {%- if parent != blank -%}|{{ parent.id }}|{%- endif -%}
+    {%- endfor -%}
+  {%- endif -%}
+{%- endfor -%}

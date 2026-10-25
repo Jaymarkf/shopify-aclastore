@@ -49,6 +49,7 @@
           {% for _id in order_ids %}
             {% assign int_id = _id | times: 1 %}
             {% assign product = products | find: 'id', int_id %}
+            {% if product == blank %}{% continue %}{% endif %}
             <li
               class="predictive-search-results__card predictive-search-results__card--product"
               ref="recentlyViewedItems[]"
@@ -58,13 +59,14 @@
                 resource: product,
                 image_width: 500,
                 image_hover: true,
-                image_aspect_ratio: '4 / 5',
+                image_aspect_ratio: '1',
                 product_view_context: 'search'
               %}
             </li>
           {% endfor %}
         {% else %}
           {% for product in products limit: limit %}
+            {% if product == blank %}{% continue %}{% endif %}
             <li
               class="predictive-search-results__card predictive-search-results__card--product"
               ref="recentlyViewedItems[]"
@@ -74,7 +76,7 @@
                 resource: product,
                 image_width: 500,
                 image_hover: true,
-                image_aspect_ratio: '4 / 5',
+                image_aspect_ratio: '1',
                 product_view_context: 'search'
               %}
             </li>
@@ -93,6 +95,7 @@
         assign limit = limit | default: 8
       %}
       {% for product in products limit: limit %}
+            {% if product == blank %}{% continue %}{% endif %}
         <li
           class="predictive-search-results__card predictive-search-results__card--product"
           ref="resultsItems[]"
@@ -102,7 +105,7 @@
             resource: product,
             image_width: 500,
             image_hover: true,
-            image_aspect_ratio: '4 / 5',
+            image_aspect_ratio: '1',
             product_view_context: 'search'
           %}
         </li>

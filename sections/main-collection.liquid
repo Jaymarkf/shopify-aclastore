@@ -1,11 +1,51 @@
+{% assign context = 'collection' %}
+{% liquid
+  assign catalog = settings.catalog_groups | default: collections['storefront-product-groups'] | default: collections.markers
+  assign query = ''
+  assign target = collection
+  assign sort_by = collection.sort_by | default: 'manual'
+  if context == 'search'
+    assign query = search.terms
+    assign target = nil
+    assign sort_by = search.sort_by | default: 'manual'
+  endif
+%}
+{% capture parent_ids %}{% if context == 'search' %}{% render 'acla-search-parent-ids', products: search.results %}{% endif %}{% endcapture %}
+{% render 'collection-wrapper-styles' %}
+{% render 'product-card-styles' %}
+{% render 'text-block-styles' %}
+{% render 'price-styles' %}
+{% render 'product-card-gallery-zoom-details-styles' %}
+<script src="{{ 'results-list.js' | asset_url }}" type="module" fetchpriority="low"></script>
 
-
-<script
-  src="{{ 'results-list.js' | asset_url }}"
-  type="module"
-  fetchpriority="low"
-></script>
-
+{% paginate catalog.products by 250 %}
+  {% liquid
+    assign candidates = catalog.products
+    case sort_by
+      when 'title-ascending'
+        assign candidates = candidates | sort_natural: 'title'
+      when 'title-descending'
+        assign candidates = candidates | sort_natural: 'title' | reverse
+      when 'price-ascending'
+        assign candidates = candidates | sort: 'price'
+      when 'price-descending'
+        assign candidates = candidates | sort: 'price' | reverse
+    endcase
+    assign group_count = 0
+  %}
+  {% capture children %}
+    {% for product in candidates %}
+      {% capture visible %}{% render 'acla-group-visible', product_resource: product, target_collection: target, query: query, parent_ids: parent_ids %}{% endcapture %}
+      {% if visible == 'true' %}
+        {% assign group_count = group_count | plus: 1 %}
+        <li class="product-grid__item" id="{{ section.id }}-{{ product.id }}" data-product-id="{{ product.id }}" data-group-card data-page="{{ paginate.current_page }}" ref="cards[]">
+          {% content_for 'block', type: '_product-card', id: 'product-card', closest.product: product, product_view_context: context %}
+        </li>
+      {% endif %}
+    {% endfor %}
+  {% endcapture %}
+{% render 'acla-group-results', section: section, context: context, children: children, group_count: group_count, candidates: candidates, paginate: paginate, sort_by: sort_by %}
+{% endpaginate %}
 {% javascript %}
   const url = new URL(window.location.href);
   if (url.hash) {
@@ -21,76 +61,6 @@
     );
   }
 {% endjavascript %}
-
-{% comment %} We always render this full-width, as the child blocks have width: page/full settings {% endcomment %}
-{% liquid
-  if section.settings.background_color != blank
-    render 'contrast-override', background_color: section.settings.background_color, section_id: section.id
-  endif
-%}
-
-{% render 'collection-wrapper-styles' %}
-
-<div
-  class="section-background{% if section.settings.background_color != blank %} color-custom-{{ section.id }}{% endif %}"
-></div>
-<collection-component view-event-payload="{{ collection | standard_event_data: 'view' | escape }}">
-  <results-list
-    class="section product-grid-container{% if section.settings.background_color != blank %} color-custom-{{ section.id }}{% endif %}"
-    style="--padding-block-start: {{ section.settings.padding-block-start }}px; --padding-block-end: {{ section.settings.padding-block-end }}px;"
-    section-id="{{ section.id }}"
-    infinite-scroll="{{ section.settings.enable_infinite_scroll }}"
-  >
-    {% render 'skip-to-content-link', href: '#ResultsList', text: 'accessibility.skip_to_results_list' %}
-
-    <div
-      class="collection-wrapper grid gap-style{% if section.settings.product_grid_width == 'full-width' %} collection-wrapper--grid-full-width{% endif %}"
-    >
-      {% content_for 'block',
-        type: 'filters',
-        id: 'filters',
-        results: collection,
-        results_size: collection.products_count
-      %}
-
-      {% assign products_per_page = 24 %}
-
-      {% if section.settings.enable_infinite_scroll == false %}
-        {% assign products_per_page = section.settings.products_per_page %}
-      {% endif %}
-
-      {% paginate collection.products by products_per_page %}
-        {% capture children %}
-          {% for product in collection.products %}
-            <li
-              id="{{ section.id }}-{{ product.id }}"
-              class="product-grid__item product-grid__item--{{ forloop.index0 }}"
-              data-page="{{ paginate.current_page }}"
-              data-product-id="{{ product.id }}"
-              ref="cards[]"
-            >
-              {% content_for 'block',
-                type: '_product-card',
-                id: 'product-card',
-                closest.product: product,
-                product_view_context: 'collection'
-              %}
-            </li>
-          {% endfor %}
-        {% endcapture %}
-
-        {% render 'product-grid',
-          section: section,
-          children: children,
-          products: collection.products,
-          paginate: paginate,
-          enable_infinite_scroll: section.settings.enable_infinite_scroll
-        %}
-      {% endpaginate %}
-    </div>
-  </results-list>
-</collection-component>
-
 {% schema %}
 {
   "name": "t:names.collection_container",

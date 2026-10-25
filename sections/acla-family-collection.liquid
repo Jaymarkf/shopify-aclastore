@@ -1,230 +1,51 @@
-{% comment %}
-  Collection grid containing only products with assigned family products.
-  @example Assign the product-groups collection template in Shopify Admin.
-{% endcomment %}
-
+{% assign context = 'collection' %}
 {% liquid
-  if section.settings.background_color != blank
-    render 'contrast-override', background_color: section.settings.background_color, section_id: section.id
+  assign catalog = settings.catalog_groups | default: collections['storefront-product-groups'] | default: collections.markers
+  assign query = ''
+  assign target = collection
+  assign sort_by = collection.sort_by | default: 'manual'
+  if context == 'search'
+    assign query = search.terms
+    assign target = nil
+    assign sort_by = search.sort_by | default: 'manual'
   endif
-  assign sort_by = collection.sort_by | default: collection.default_sort_by
 %}
-
+{% capture parent_ids %}{% if context == 'search' %}{% render 'acla-search-parent-ids', products: search.results %}{% endif %}{% endcapture %}
 {% render 'collection-wrapper-styles' %}
 {% render 'product-card-styles' %}
 {% render 'text-block-styles' %}
 {% render 'price-styles' %}
 {% render 'product-card-gallery-zoom-details-styles' %}
+<script src="{{ 'results-list.js' | asset_url }}" type="module" fetchpriority="low"></script>
 
-<div class="section-background{% if section.settings.background_color != blank %} color-custom-{{ section.id }}{% endif %}"></div>
-
-{% paginate collection.products by 50 %}
-  {% assign group_count = 0 %}
+{% paginate catalog.products by 250 %}
+  {% liquid
+    assign candidates = catalog.products
+    case sort_by
+      when 'title-ascending'
+        assign candidates = candidates | sort_natural: 'title'
+      when 'title-descending'
+        assign candidates = candidates | sort_natural: 'title' | reverse
+      when 'price-ascending'
+        assign candidates = candidates | sort: 'price'
+      when 'price-descending'
+        assign candidates = candidates | sort: 'price' | reverse
+    endcase
+    assign group_count = 0
+  %}
   {% capture children %}
-    {% for product in collection.products %}
-      {% assign assigned_count = product.metafields.custom.family_products.value | size %}
-      {% if assigned_count > 0 %}
+    {% for product in candidates %}
+      {% capture visible %}{% render 'acla-group-visible', product_resource: product, target_collection: target, query: query, parent_ids: parent_ids %}{% endcapture %}
+      {% if visible == 'true' %}
         {% assign group_count = group_count | plus: 1 %}
-        <li
-          id="{{ section.id }}-{{ product.id }}"
-          class="product-grid__item"
-          data-group-card
-          data-product-id="{{ product.id }}"
-        >
-          {% content_for 'block',
-            type: '_product-card',
-            id: 'product-card',
-            closest.product: product,
-            product_view_context: 'collection'
-          %}
+        <li class="product-grid__item" id="{{ section.id }}-{{ product.id }}" data-product-id="{{ product.id }}" data-group-card data-page="{{ paginate.current_page }}" ref="cards[]">
+          {% content_for 'block', type: '_product-card', id: 'product-card', closest.product: product, product_view_context: context %}
         </li>
       {% endif %}
     {% endfor %}
   {% endcapture %}
-
-  <acla-family-collection
-    class="section acla-family-collection{% if section.settings.background_color != blank %} color-custom-{{ section.id }}{% endif %}"
-    data-section-id="{{ section.id }}"
-    data-group-count="{{ group_count }}"
-    data-one="{{ 'acla_collections.group_one' | t | escape }}"
-    data-many="{{ 'acla_collections.group_many' | t | escape }}"
-    data-loading="{{ 'acla_collections.loading' | t | escape }}"
-    data-error="{{ 'acla_collections.load_error' | t | escape }}"
-    style="--padding-block-start: {{ section.settings.padding-block-start }}px; --padding-block-end: {{ section.settings.padding-block-end }}px;"
-  >
-    <div class="collection-wrapper grid{% if section.settings.product_grid_width == 'full-width' %} collection-wrapper--grid-full-width{% endif %}">
-    <div class="acla-family-collection__toolbar">
-      <p>
-        <span data-group-number>{{ group_count }}</span>
-        <span data-group-label>{% if group_count == 1 %}{{ 'acla_collections.group_one' | t }}{% else %}{{ 'acla_collections.group_many' | t }}{% endif %}</span>
-      </p>
-      <form action="{{ collection.url }}" method="get" class="acla-family-collection__sort">
-        <label for="GroupSort-{{ section.id }}">{{ 'acla_collections.sort_by' | t }}</label>
-        <select id="GroupSort-{{ section.id }}" name="sort_by">
-          {% for option in collection.sort_options %}
-            <option value="{{ option.value | escape }}"{% if option.value == sort_by %} selected{% endif %}>{{ option.name | escape }}</option>
-          {% endfor %}
-        </select>
-        <button type="submit" class="button button-secondary">{{ 'acla_collections.apply_sort' | t }}</button>
-      </form>
-    </div>
-
-    {% comment %} Native pagination scans source products; only group cards enter this grid. {% endcomment %}
-    {% render 'product-grid',
-      section: section,
-      children: children,
-      products: collection.products,
-      paginate: paginate,
-      enable_infinite_scroll: true
-    %}
-
-    {% assign hide_empty_message = false %}
-    {% if group_count > 0 %}{% assign hide_empty_message = true %}{% endif %}
-    {% if paginate.next %}{% assign hide_empty_message = true %}{% endif %}
-    <p class="acla-family-collection__empty" data-group-empty{% if hide_empty_message %} hidden{% endif %}>{{ 'acla_collections.empty' | t }}</p>
-    <div class="acla-family-collection__footer">
-      {% if paginate.next %}
-        <a href="{{ paginate.next.url }}" class="button button-secondary" data-group-next>{{ 'acla_collections.load_more' | t }}</a>
-      {% endif %}
-      <p data-group-feedback role="status" aria-live="polite"></p>
-      <noscript>{{ paginate | default_pagination }}</noscript>
-    </div>
-    </div>
-  </acla-family-collection>
+{% render 'acla-group-results', section: section, context: context, children: children, group_count: group_count, candidates: candidates, paginate: paginate, sort_by: sort_by %}
 {% endpaginate %}
-
-{% stylesheet %}
-  .acla-family-collection {
-    display: block;
-    padding-block: var(--padding-block-start) var(--padding-block-end);
-  }
-  .acla-family-collection__toolbar,
-  .acla-family-collection__sort {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-  .acla-family-collection__toolbar { justify-content: space-between; padding-block: 8px 24px; }
-  .acla-family-collection__toolbar,
-  .acla-family-collection__footer,
-  .acla-family-collection__empty { grid-column: var(--centered); }
-  .acla-family-collection__toolbar p { margin: 0; }
-  .acla-family-collection__sort select {
-    max-width: 100%;
-    min-height: 44px;
-    padding: 8px 28px 8px 12px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--style-border-radius-inputs, 4px);
-    color: inherit;
-    background: var(--color-background);
-    font: inherit;
-  }
-  .acla-family-collection__sort .button { min-height: 44px; }
-  .acla-family-collection__footer { text-align: center; padding-block-start: 24px; }
-  .acla-family-collection__footer p:empty { display: none; }
-  .acla-family-collection__empty { padding-block: 32px; text-align: center; }
-  .acla-family-collection [hidden],
-  .acla-family-collection .main-collection-grid__empty { display: none !important; }
-  @media (min-width: 750px) {
-    .acla-family-collection > .collection-wrapper {
-      grid-template-columns:
-        minmax(var(--page-margin), 1fr)
-        repeat(12, minmax(0, calc(var(--full-page-grid-central-column-width) / 12)))
-        minmax(var(--page-margin), 1fr);
-    }
-    .acla-family-collection .main-collection-grid { display: block; }
-  }
-  @media (max-width: 749px) {
-    .acla-family-collection__toolbar,
-    .acla-family-collection__footer,
-    .acla-family-collection__empty { margin-inline: var(--page-margin); }
-    .acla-family-collection__sort { width: 100%; }
-    .acla-family-collection__sort select { flex: 1; min-width: 0; }
-  }
-{% endstylesheet %}
-
-{% javascript %}
-  class AclaFamilyCollection extends HTMLElement {
-    #controller;
-    #busy = false;
-    #handleClick = (event) => {
-      const link = event.target.closest('[data-group-next]');
-      if (!link || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-      event.preventDefault();
-      this.#loadNext();
-    };
-
-    connectedCallback() {
-      this.addEventListener('click', this.#handleClick);
-      // A source page can contain only individual colors. Continue until a group is found.
-      if (!this.querySelector('[data-group-card]') && this.querySelector('[data-group-next]')) this.#loadNext();
-    }
-
-    disconnectedCallback() {
-      this.removeEventListener('click', this.#handleClick);
-      this.#controller?.abort();
-    }
-
-    async #loadNext() {
-      if (this.#busy) return;
-      const link = this.querySelector('[data-group-next]');
-      const grid = this.querySelector('.product-grid');
-      const feedback = this.querySelector('[data-group-feedback]');
-      if (!link || !grid || !feedback) return;
-      this.#busy = true;
-      this.#controller = new AbortController();
-      link.setAttribute('aria-disabled', 'true');
-      this.setAttribute('aria-busy', 'true');
-      feedback.textContent = this.dataset.loading;
-      try {
-        let added = 0;
-        const visited = new Set();
-        while (link.getAttribute('href') && !added) {
-          const pageUrl = new URL(link.href, window.location.href);
-          if (pageUrl.origin !== window.location.origin || visited.has(pageUrl.href)) throw new Error('Invalid next page');
-          visited.add(pageUrl.href);
-          pageUrl.searchParams.set('section_id', this.dataset.sectionId);
-          const response = await fetch(pageUrl, { signal: this.#controller.signal });
-          if (!response.ok) throw new Error('Collection request failed');
-          const documentPage = new DOMParser().parseFromString(await response.text(), 'text/html');
-          const nextSection = Array.from(documentPage.querySelectorAll('acla-family-collection')).find(section => section.dataset.sectionId === this.dataset.sectionId);
-          if (!nextSection) throw new Error('Collection section missing');
-          const existingIds = new Set(Array.from(grid.querySelectorAll('[data-group-card]'), card => card.dataset.productId));
-          for (const card of nextSection.querySelectorAll('[data-group-card]')) {
-            if (existingIds.has(card.dataset.productId)) continue;
-            existingIds.add(card.dataset.productId);
-            grid.append(document.importNode(card, true));
-            added++;
-          }
-          // Keep component styles included by Shopify on subsequently rendered pages.
-          for (const style of documentPage.querySelectorAll('style[data-section-stylesheet]')) {
-            const current = this.querySelector('style[data-section-stylesheet]');
-            if (current) current.textContent = style.textContent;
-            else this.prepend(document.importNode(style, true));
-          }
-          const nextLink = nextSection.querySelector('[data-group-next]');
-          if (nextLink) link.setAttribute('href', nextLink.getAttribute('href'));
-          else { link.removeAttribute('href'); link.hidden = true; }
-        }
-        const count = grid.querySelectorAll('[data-group-card]').length;
-        this.dataset.groupCount = String(count);
-        this.querySelector('[data-group-number]').textContent = String(count);
-        this.querySelector('[data-group-label]').textContent = count === 1 ? this.dataset.one : this.dataset.many;
-        this.querySelector('[data-group-empty]').hidden = count > 0;
-        feedback.textContent = `${count} ${count === 1 ? this.dataset.one : this.dataset.many}`;
-      } catch (error) {
-        if (error.name !== 'AbortError') feedback.textContent = this.dataset.error;
-      } finally {
-        this.#busy = false;
-        link.removeAttribute('aria-disabled');
-        this.removeAttribute('aria-busy');
-      }
-    }
-  }
-  if (!customElements.get('acla-family-collection')) customElements.define('acla-family-collection', AclaFamilyCollection);
-{% endjavascript %}
-
 {% schema %}
 {
   "name": "t:acla_collections.section_name",

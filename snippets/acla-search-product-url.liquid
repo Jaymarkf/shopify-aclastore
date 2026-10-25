@@ -1,0 +1,41 @@
+{%- doc -%}
+  Search destination for an individual product, preserving its identity inside its group.
+  @param {product} product_resource - The actual search result.
+  @example
+  {% capture destination %}{% render 'acla-search-product-url', product_resource: product %}{% endcapture %}
+{%- enddoc -%}
+{%- liquid
+  assign parent = nil
+  for membership in product_resource.collections
+    assign candidate = membership.metafields.custom.family_parent.value
+    if candidate != blank and candidate.id != product_resource.id
+      if candidate.metafields.custom.family_collection.value.id == membership.id
+        assign parent = candidate
+        break
+      endif
+    endif
+  endfor
+  if parent == blank
+    assign groups = settings.catalog_groups | default: collections['storefront-product-groups'] | default: collections.markers
+    for candidate in groups.products
+      if candidate.id == product_resource.id
+        break
+      endif
+      if candidate.metafields.custom.family_collection.value == blank
+        assign match = candidate.metafields.custom.family_products.value | find: 'id', product_resource.id
+        if match == blank
+          assign match = candidate.metafields.custom.family_products_more.value | find: 'id', product_resource.id
+        endif
+        if match != blank
+          assign parent = candidate
+          break
+        endif
+      endif
+    endfor
+  endif
+  if parent != blank
+    echo parent.url | append: '?acla_item=' | append: product_resource.id
+  else
+    echo product_resource.url
+  endif
+-%}

@@ -1,5 +1,5 @@
 import { Component } from '@theme/component';
-import { onDocumentLoaded, changeMetaThemeColor, setHeaderMenuStyle } from '@theme/utilities';
+import { onDocumentLoaded, changeMetaThemeColor, setHeaderMenuStyle, calculateHeaderGroupHeight } from '@theme/utilities';
 import {
   getScrollTop,
   getScrollEventTarget,
@@ -223,6 +223,7 @@ class HeaderComponent extends Component {
 
   connectedCallback() {
     super.connectedCallback();
+    this.closest('#header-group')?.style.setProperty('--header-group-menu-extension', '0px');
     this.#resizeObserver.observe(this);
     this.addEventListener('overflowMinimum', this.#handleOverflowMinimum);
 
@@ -281,16 +282,16 @@ onDocumentLoaded(() => {
 
   // Update header group height on resize of any child
   if (headerGroup) {
-    const resizeObserver = new ResizeObserver((entries) => {
-      const headerGroupHeight = entries.reduce((totalHeight, entry) => {
-        if (
-          entry.target !== header ||
-          (header.hasAttribute('transparent') && header.parentElement?.nextElementSibling)
-        ) {
-          return totalHeight + (entry.borderBoxSize[0]?.blockSize ?? 0);
-        }
-        return totalHeight;
-      }, 0);
+    const resizeObserver = new ResizeObserver(() => {
+      // ResizeObserver entries include only changed children, not the whole group.
+      const currentHeader = headerGroup.querySelector('header-component');
+      const headerGroupHeight = calculateHeaderGroupHeight(currentHeader, headerGroup);
+      let precedingHeight = 0;
+      for (const child of headerGroup.children) {
+        if (child === currentHeader?.parentElement) break;
+        if (child instanceof HTMLElement) precedingHeight += child.offsetHeight;
+      }
+      headerGroup.style.setProperty('--header-group-before-height', `${precedingHeight}px`);
       // The initial height is calculated using the .offsetHeight property, which returns an integer.
       // We round to the nearest integer to avoid unnecessaary reflows.
       const roundedHeaderGroupHeight = Math.round(headerGroupHeight);

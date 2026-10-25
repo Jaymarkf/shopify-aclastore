@@ -5,8 +5,11 @@
   {% render 'acla-commerce-status' %}
 {% enddoc %}
 
-<script type="application/json" data-acla-cart-snapshot data-cart-url="{{ routes.cart_url }}.js">
+<script type="application/json" data-acla-cart-snapshot data-cart-url="{{ routes.cart_url }}.js" data-family-url="{{ routes.cart_url }}?view=family-memberships">
   {"items":[{% for status_line in cart.items %}{% unless forloop.first %},{% endunless %}{"product_id":{{ status_line.product_id | json }},"variant_id":{{ status_line.variant_id | json }},"quantity":{{ status_line.quantity | json }}}{% endfor %}]}
+</script>
+<script type="application/json" data-acla-family-snapshot>
+  [{% assign membership_count = 0 %}{% for status_line in cart.items %}{% for source_collection in status_line.product.collections %}{% assign group_parent = source_collection.metafields.custom.family_parent.value %}{% if group_parent != blank %}{% if membership_count > 0 %},{% endif %}[{{ status_line.product_id | append: '' | json }},{{ group_parent.id | append: '' | json }}]{% assign membership_count = membership_count | plus: 1 %}{% endif %}{% endfor %}{% endfor %}]
 </script>
 
 {% stylesheet %}
@@ -46,6 +49,9 @@
     overflow-wrap: anywhere;
   }
   [ref="priceContainer"] > .acla-promotion-badge { margin-inline-start: 8px; vertical-align: middle; }
+  .acla-promotion-badge[hidden] { display: none !important; }
+  .acla-promotion-badge.acla-promotion-badge > span { color: inherit; font: inherit; }
+  .acla-promotion-badge small { display: block; font-size: 10px; font-weight: 400; line-height: 1.4; }
   [ref="priceContainer"] > .acla-cart-status { margin-block-start: 6px; }
   .product-card, .resource-card__media { position: relative; }
   .product-card [ref="priceContainer"] > .acla-cart-status,

@@ -1,0 +1,49 @@
+{%- doc -%}
+  Returns true only for assigned groups matching a collection and optional search.
+  @param {product} product_resource - Candidate group.
+  @param {collection} [target_collection] - Category to match; all includes every group.
+  @param {string} [query] - Shopper search terms.
+  @param {string} [parent_ids] - Parent IDs resolved from native child search matches.
+  @example
+  {% capture visible %}{% render 'acla-group-visible', product_resource: product %}{% endcapture %}
+{%- enddoc -%}
+{%- capture count -%}{%- render 'acla-group-count', product_resource: product_resource -%}{%- endcapture -%}
+{%- liquid
+  assign count = count | plus: 0
+  assign visible = false
+  if count > 0
+    assign visible = true
+    if target_collection != blank and target_collection.handle != 'all'
+      assign visible = false
+      assign source = product_resource.metafields.custom.family_collection.value
+      assign linked_parent = target_collection.metafields.custom.family_parent.value
+      if source.id == target_collection.id or linked_parent.id == product_resource.id
+        assign visible = true
+      else
+        for membership in product_resource.collections
+          if membership.id == target_collection.id
+            assign visible = true
+            break
+          endif
+        endfor
+      endif
+    endif
+    if visible and query != blank
+      assign text = product_resource.title | append: ' ' | append: product_resource.vendor | append: ' ' | append: product_resource.product_type
+      assign tags = product_resource.tags | join: ' '
+      assign text = text | append: ' ' | append: tags | downcase
+      assign words = query | downcase | replace: '"', '' | strip | split: ' '
+      for word in words
+        unless text contains word
+          assign visible = false
+          break
+        endunless
+      endfor
+      assign key = product_resource.id | prepend: '|' | append: '|'
+      if parent_ids contains key
+        assign visible = true
+      endif
+    endif
+  endif
+  echo visible
+-%}

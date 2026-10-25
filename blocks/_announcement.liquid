@@ -1,5 +1,10 @@
 
 
+{% doc %}
+  An editable announcement message with typography and an optional destination link.
+  Its parent announcement bar owns marquee or slideshow behavior.
+  @example Add an Announcement block inside the Header's Announcement bar.
+{% enddoc %}
 {% render 'text-block-styles' %}
 
 {%- assign block_settings = block.settings -%}
@@ -21,13 +26,15 @@
     "
     style="
       {% render 'typography-style', settings: block_settings, preset: 'custom' %}
+      {% if block_settings.mobile_font_size != blank %}--announcement-mobile-font-size: {{ block_settings.mobile_font_size }};{% endif %}
       {% if block_settings.text_color != blank %}--color: {{ block_settings.text_color }}; --color-rgb: {{ block_settings.text_color.rgb }};{% endif %}
       --width: 100%;
       --text-align: center;
-      --line-height: 1;
+      --line-height: {{ block_settings.announcement_line_height | default: '1.35' }};
     "
     {{ block.shopify_attributes }}
-    aria-hidden="{% if block_index == 0 %}false{% else %}true{% endif %}"
+    dir="auto"
+    aria-hidden="{% if section.settings.display_mode == 'marquee' or section.settings.display_mode == 'static' or block_index == 0 %}false{% else %}true{% endif %}"
   >
     <p class="announcement-bar__text">
       {{ block.settings.text }}
@@ -39,7 +46,7 @@
         href="{{ block_settings.link }}"
       >
         <span class="visually-hidden">
-          {{ block_settings.text | strip_html }}
+          {{ block_settings.text | strip_html | escape }}
         </span>
       </a>
     {% endif %}
@@ -165,6 +172,34 @@
         }
       ],
       "default": "1rem"
+    },
+    {
+      "type": "select",
+      "id": "mobile_font_size",
+      "label": "t:acla_announcements.mobile_size",
+      "options": [
+        { "value": "", "label": "t:options.default" },
+        { "value": "0.625rem", "label": "10px" },
+        { "value": "0.75rem", "label": "12px" },
+        { "value": "0.875rem", "label": "14px" },
+        { "value": "1rem", "label": "16px" },
+        { "value": "1.125rem", "label": "18px" },
+        { "value": "1.25rem", "label": "20px" },
+        { "value": "1.5rem", "label": "24px" },
+        { "value": "2rem", "label": "32px" }
+      ],
+      "default": ""
+    },
+    {
+      "type": "select",
+      "id": "announcement_line_height",
+      "label": "t:settings.line_height",
+      "options": [
+        { "value": "1", "label": "t:options.tight" },
+        { "value": "1.35", "label": "t:options.normal" },
+        { "value": "1.6", "label": "t:options.loose" }
+      ],
+      "default": "1.35"
     },
     {
       "type": "select",

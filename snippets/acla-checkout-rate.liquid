@@ -1,0 +1,20 @@
+{% doc %}
+  Returns the display-only checkout offer percentage for an eligible product.
+  Keep theme settings aligned with the separately managed native discount.
+  @param {product} product_resource - Product whose collection membership is checked.
+  @example
+  {% render 'acla-checkout-rate', product_resource: product %}
+{% enddoc %}
+{%- liquid
+  assign checkout_rate = 0
+  assign offer_collection = settings.checkout_savings_collection
+  if settings.checkout_savings_enabled and offer_collection != blank
+    for member_collection in product_resource.collections
+      if member_collection.id == offer_collection.id
+        assign checkout_rate = settings.checkout_savings_percent
+        break
+      endif
+    endfor
+  endif
+  echo checkout_rate
+-%}

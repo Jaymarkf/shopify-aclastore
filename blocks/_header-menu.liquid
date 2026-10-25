@@ -151,6 +151,9 @@
                     class="mega-menu__grid"
                     data-menu-grid-id="{{ list_id }}"
                   >
+                    {% if menu_content_type == 'cascading' %}
+                      {% render 'acla-brand-menu', parent_link: link, menu_id: list_id %}
+                    {% else %}
                     {% render 'mega-menu-list',
                       parent_link: link,
                       id: list_id,
@@ -162,6 +165,7 @@
                       content_aspect_ratio: ratio,
                       image_border_radius: image_border_radius
                     %}
+                    {% endif %}
                   </div>
                 </div>
               </div>
@@ -951,6 +955,10 @@
         {
           "value": "text",
           "label": "t:options.none"
+        },
+        {
+          "value": "cascading",
+          "label": "t:acla_navigation.cascading"
         },
         {
           "value": "collection_images",

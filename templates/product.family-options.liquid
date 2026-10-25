@@ -1,0 +1,13 @@
+{% layout none %}
+<!doctype html>
+<html lang="{{ request.locale.iso_code }}">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, follow">
+    <title>{{ product.title | escape }}</title>
+  </head>
+  <body>
+    <main>{% render 'acla-family-catalog', product_resource: product %}</main>
+  </body>
+</html>

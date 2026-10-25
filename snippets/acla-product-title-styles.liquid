@@ -1,0 +1,51 @@
+{% doc %}
+  Responsive typography applied to the theme's existing product-title elements.
+  @example
+  {% render 'acla-product-title-styles' %}
+{% enddoc %}
+
+{% stylesheet %}
+  .product-details .text-block:has(> h1) {
+    min-inline-size: 0;
+    max-inline-size: 100%;
+  }
+
+  .product-details .text-block > h1 {
+    font-size: var(--product-title-size);
+    line-height: 1.3;
+    letter-spacing: -0.015em;
+    overflow-wrap: anywhere;
+    text-wrap: pretty;
+  }
+
+  .acla-family .acla-family__intro > h1 {
+    font-size: var(--product-title-size);
+    font-weight: var(--font-heading--weight);
+    line-height: 1.3;
+    letter-spacing: -0.015em;
+    overflow-wrap: anywhere;
+    text-wrap: pretty;
+  }
+
+  .product-card [ref='productTitleLink'] .text-block > [role='heading'],
+  .resource-card[data-resource-type='product'] .resource-card__title {
+    font-size: min(1em, 1rem);
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: normal;
+    overflow-wrap: anywhere;
+    text-wrap: pretty;
+  }
+
+  .cart-items__title {
+    font-size: min(1em, 1rem);
+    font-weight: 600;
+    line-height: 1.4;
+  }
+  @media screen and (max-width: 749px) {
+    .product-details .text-block > h1,
+    .acla-family .acla-family__intro > h1 {
+      font-size: var(--product-title-mobile-size);
+    }
+  }
+{% endstylesheet %}

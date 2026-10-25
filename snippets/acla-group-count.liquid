@@ -1,0 +1,20 @@
+{%- doc -%}
+  Returns the number of assigned individual products for a group.
+  @param {product} product_resource - Candidate group product.
+  @example
+  {% capture count %}{% render 'acla-group-count', product_resource: product %}{% endcapture %}
+{%- enddoc -%}
+{%- liquid
+  assign count = 0
+  if product_resource != blank
+    assign source = product_resource.metafields.custom.family_collection.value
+    if source != blank
+      assign count = source.products_count
+    else
+      assign count = product_resource.metafields.custom.family_products.value.count | default: 0
+      assign more = product_resource.metafields.custom.family_products_more.value.count | default: 0
+      assign count = count | plus: more
+    endif
+  endif
+  echo count
+-%}

@@ -8,6 +8,32 @@
  * ------------------------------------------------------------
  */
 {
+  "acla_announcements": {
+    "mode": "Announcement style",
+    "marquee": "Scrolling marquee",
+    "slideshow": "Fading slideshow",
+    "static": "Static messages",
+    "content_help": "Add Announcement blocks for your messages and links. Edit each block for font, size, weight, letter spacing, capitalization and color. Reduced-motion visitors see readable stationary messages.",
+    "speed": "Marquee speed (pixels per second)",
+    "speed_help": "Pixels per second. A higher number moves faster. The same speed is maintained across screen sizes and message lengths.",
+    "direction": "Marquee direction",
+    "left": "Scroll left",
+    "right": "Scroll right",
+    "pause_hover": "Pause on hover",
+    "gap": "Gap between messages",
+    "mobile_gap": "Gap between messages on mobile",
+    "color_help": "Default for all announcements. Individual Announcement blocks can override it. Leave blank for automatic contrast against the background.",
+    "padding_start": "Start (left in English)",
+    "padding_end": "End (right in English)",
+    "mobile_size": "Text size on mobile"
+  },
+  "acla_header_background": {
+    "share_announcements": "Use header background image",
+    "share_help": "Continue the image chosen in Header across this bar. Turn off to show this bar's own background color. Applies when the shared header image is enabled.",
+    "enabled": "Show header background image",
+    "image_help": "Background for the header group and expanded navigation. Choose an image to replace the included watercolor, or turn off Show header background image to remove it. Use a light, wide image so text stays readable.",
+    "opacity": "Background image strength"
+  },
   "categories": {
     "banners": "Banners",
     // Category for fundamental content blocks (text, images, buttons)
@@ -1240,11 +1266,11 @@
   },
   "acla_collections": {
     "section_name": "Product groups",
-    "setup_help": "Shows only products in this collection that have products assigned under Products in this group. Individual items stay available on their group pages. Add the parent product to this collection when creating a new group."
+    "setup_help": "Shows product group pages with an assigned Products collection. Add the parent product to this brand collection. Existing groups using product lists are also supported."
   },
   "acla_family": {
     "section_name": "Product family",
-    "setup_help": "Select individual products in the parent's Products in this group metafield. Their existing prices, SKUs, and inventory are used automatically. No variants are created.",
+    "setup_help": "Choose a Products collection on the parent product in Admin. Manage its individual products in Products > Collections. Existing prices, SKUs and stock are used; no variants are created.",
     "products_label": "Fallback products",
     "products_help": "Used only when this product has no Products in this group metafield. Select up to 50 products.",
     "accent_label": "Accent color",
@@ -1255,6 +1281,50 @@
     "padding_bottom_label": "Bottom spacing",
     "question_block": "Question and answer",
     "question_label": "Question",
-    "answer_label": "Answer"
+    "answer_label": "Answer",
+    "performance_header": "Large catalog performance preview",
+    "performance_product": "Product to simulate",
+    "performance_count": "Simulated item count",
+    "performance_info": "Use 0 for real products. Repeats the selected product group for preview testing only; no products are created and cart additions are disabled while testing."
+  },
+  "acla_navigation": {
+    "cascading": "Nested brand panels",
+    "related_collection": "Related products collection",
+    "related_collection_info": "Optional: show products from this collection instead of automatic recommendations. The current product is excluded. Useful for display-only product families."
+  },
+  "acla_product_title": {
+    "heading": "Product page titles",
+    "help": "Adjust title font sizes on product pages, including product groups. The title text stays controlled by the product in Admin.",
+    "desktop": "Desktop title size",
+    "mobile": "Mobile title size"
+  },
+  "acla_savings": {
+    "name": "Checkout savings badge",
+    "enabled": "Include checkout offer in savings",
+    "collection": "Eligible products collection",
+    "percent": "Checkout discount percentage",
+    "help": "Display only. Match your active automatic discount in Discounts. Update the percentage or turn this off when that offer changes. This setting does not create or sync discounts. List price uses Compare-at price, or the regular Price when no higher Compare-at price is recorded."
+  },
+  "acla_featured": {
+    "contain": "Keep carousel inside page container",
+    "contain_help": "Align the product slider with the section heading and keep cards inside the left and right page margins."
+  },
+  "acla_category_tiles": {
+    "section_name": "Category tiles",
+    "tile_name": "Category tile",
+    "image_shape": "Image shape",
+    "landscape": "Landscape",
+    "square": "Square"
+  },
+  "acla_scroll": {
+    "name": "Product page scrolling",
+    "enabled": "Show quick scroll button",
+    "help": "Move through product pages in 25% steps. The arrow reverses at the bottom and top."
+  },
+  "acla_catalog": {
+    "settings_name": "Storefront catalog",
+    "groups_only": "Show product groups only",
+    "collection": "Product groups collection",
+    "collection_help": "Uses Storefront product groups by default. Add main group products to this collection; only groups with assigned products are shown. Individual products remain available inside their group pages."
   }
 }

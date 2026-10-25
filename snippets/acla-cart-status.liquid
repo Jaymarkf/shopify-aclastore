@@ -10,22 +10,44 @@
 {% if product_resource != blank %}
   {% liquid
     assign cart_product_ids = product_resource.id | append: ''
-    assign cart_group_products = product_resource.metafields.custom.family_products.value
-    for cart_group_product in cart_group_products limit: 50
-      assign cart_product_ids = cart_product_ids | append: ',' | append: cart_group_product.id
-    endfor
+    assign cart_group_keys = 'family_products,family_products_more' | split: ','
+  %}
+  {% assign source_collection = product_resource.metafields.custom.family_collection.value %}
+  {% if source_collection == blank %}
+    {% for cart_group_key in cart_group_keys %}
+      {% assign cart_group_products = product_resource.metafields.custom[cart_group_key].value %}
+      {% if cart_group_products != blank %}
+        {% paginate cart_group_products by 128 %}
+          {% for cart_group_product in cart_group_products %}
+            {% assign cart_product_ids = cart_product_ids | append: ',' | append: cart_group_product.id %}
+          {% endfor %}
+        {% endpaginate %}
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+  {% liquid
     assign cart_product_ids = cart_product_ids | split: ',' | uniq
     assign cart_product_keys = cart_product_ids | join: '|' | prepend: '|' | append: '|'
     assign cart_product_quantity = 0
     for cart_line in cart.items
       assign cart_product_key = cart_line.product_id | prepend: '|' | append: '|'
-      if cart_product_keys contains cart_product_key
+      assign belongs_to_group = false
+      if source_collection != blank
+        for line_collection in cart_line.product.collections
+          if line_collection.id == source_collection.id
+            assign belongs_to_group = true
+            break
+          endif
+        endfor
+      endif
+      if cart_product_keys contains cart_product_key or belongs_to_group
         assign cart_product_quantity = cart_product_quantity | plus: cart_line.quantity
       endif
     endfor
   %}
   <acla-cart-status
     class="acla-cart-status"
+    {% if source_collection != blank %}data-cart-family-id="{{ product_resource.id }}"{% endif %}
     data-cart-product-ids="{{ cart_product_ids | json | escape }}"
     data-cart-quantity="{{ cart_product_quantity }}"
     data-label="{{ 'acla_family.in_cart_count' | t: quantity: '[quantity]' | escape }}"

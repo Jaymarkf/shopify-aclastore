@@ -1,0 +1,74 @@
+{% doc %}
+  Renders native menu children as brands with nested family panels on desktop.
+
+  @param {object} parent_link - Native menu item containing the brands
+  @param {string} menu_id - Unique ID prefix for the panels
+
+  @example
+  {% render 'acla-brand-menu', parent_link: link, menu_id: list_id %}
+{% enddoc %}
+
+<script src="{{ 'acla-brand-menu.js' | asset_url }}" type="module" fetchpriority="low"></script>
+<acla-brand-menu class="acla-brand-menu">
+  <ul class="acla-brand-menu__brands list-unstyled">
+    {% for brand_link in parent_link.links %}
+      <li class="acla-brand-menu__brand" data-brand-index="{{ forloop.index0 }}" on:pointerenter="/openBrand">
+        <div class="acla-brand-menu__trigger">
+          <a href="{{ brand_link.url }}" class="mega-menu__link mega-menu__link--parent">{{ brand_link.title | escape }}</a>
+          {% if brand_link.links != blank %}
+            <button
+              class="button-unstyled acla-brand-menu__toggle"
+              type="button"
+              ref="toggles[]"
+              aria-expanded="false"
+              aria-controls="{{ menu_id }}-Brand-{{ forloop.index }}"
+              on:click="/toggleBrand"
+            >
+              <span class="visually-hidden">{{ 'acla_navigation.show_brand' | t: brand: brand_link.title | escape }}</span>
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" aria-hidden="true"><path d="m6 3 5 5-5 5"/></svg>
+            </button>
+          {% endif %}
+        </div>
+        {% if brand_link.links != blank %}
+          <ul class="acla-brand-menu__families list-unstyled" id="{{ menu_id }}-Brand-{{ forloop.index }}" ref="panels[]" hidden>
+            {% for family_link in brand_link.links %}
+              <li><a href="{{ family_link.url }}" class="mega-menu__link">{{ family_link.title | escape }}</a></li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+</acla-brand-menu>
+
+{% stylesheet %}
+  .acla-brand-menu {
+    --acla-brand-column: min(240px, 35%);
+    display: block;
+    position: relative;
+    grid-column: 1 / -1;
+    min-inline-size: 0;
+    min-block-size: max(100px, var(--acla-brand-panel-height, 0px));
+    padding-inline-end: var(--padding-lg);
+  }
+  .acla-brand-menu__brands { inline-size: var(--acla-brand-column); }
+  .acla-brand-menu__trigger { display: flex; align-items: center; min-inline-size: 0; }
+  .acla-brand-menu__trigger > a { flex: 1; overflow-wrap: anywhere; padding: var(--padding-sm); }
+  .acla-brand-menu__toggle { display: grid; place-items: center; inline-size: 44px; min-block-size: 44px; color: inherit; }
+  .acla-brand-menu__toggle svg { transition: transform var(--animation-speed) var(--animation-easing); }
+  .acla-brand-menu__toggle[aria-expanded='true'] svg { transform: rotate(90deg); }
+  .acla-brand-menu__brand:has([aria-expanded='true']) > .acla-brand-menu__trigger { background: rgb(var(--color-foreground-rgb) / var(--opacity-5)); }
+  .acla-brand-menu__families {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: calc(var(--acla-brand-column) + var(--padding-lg));
+    inset-inline-end: 0;
+    padding-inline-start: var(--padding-lg);
+    border-inline-start: 1px solid var(--color-border);
+    min-inline-size: 0;
+  }
+  .acla-brand-menu__families[hidden] { display: none; }
+  .acla-brand-menu__families a { display: block; padding: var(--padding-sm); overflow-wrap: anywhere; }
+  .acla-brand-menu :is(a, button):focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .acla-brand-menu__toggle svg { transition: none; } }
+{% endstylesheet %}

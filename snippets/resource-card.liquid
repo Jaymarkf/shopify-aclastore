@@ -11,6 +11,11 @@
   @param {string} [image_sizes] - The sizes attribute for responsive images. Defaults to 'auto'
   @param {string} [product_view_context] - The context for product view events (e.g., 'search'). Omit to disable view events.
 {%- enddoc -%}
+{% capture group_count %}{% render 'acla-group-count', product_resource: resource %}{% endcapture %}
+{% assign group_count = group_count | plus: 0 %}
+{% if resource_type != 'product' or group_count > 0 or product_view_context == 'search' %}
+{% capture resource_url %}{% if resource_type == 'product' and product_view_context == 'search' %}{% render 'acla-search-product-url', product_resource: resource %}{% else %}{{ resource.url }}{% endif %}{% endcapture %}
+
 
 {% liquid
   if image_aspect_ratio == blank or image_aspect_ratio == 'adapt'
@@ -53,12 +58,12 @@
   >
 {%- endif -%}
 <div
-  class="resource-card{% if style == 'overlay' %} resource-card--overlay{% endif %}"
+  class="resource-card{% if style == 'overlay' %} resource-card--overlay{% endif %}{% if product_view_context == 'search' %} resource-card--search{% endif %}"
   data-resource-type="{{ resource_type }}"
 >
   <a
     class="resource-card__link"
-    href="{{ resource.url }}"
+    href="{{ resource_url | escape }}"
   >
     <span class="visually-hidden">
       {{ resource.title }}
@@ -174,6 +179,8 @@
   </{{ product_wrapper_tag }}>
 {%- endif -%}
 
+
+{% endif %}
 {% stylesheet %}
   .resource-card__wrapper {
     display: block;
@@ -271,6 +278,8 @@
   .resource-card__title.paragraph {
     line-height: 1.3;
   }
+  .resource-card--search .resource-card__image { object-fit: contain; }
+  .resource-card--search .resource-card__title { display: block; -webkit-line-clamp: unset; }
 
   .resource-card--overlay {
     height: 100%;

@@ -4,28 +4,34 @@
   @param {product} item_product - The individual product to display.
   @param {string} family_id - A unique identifier for the family section.
   @param {number} position - The product's position in the family.
+  @param {string} [format] - Use json for the compact searchable catalog; otherwise renders a row.
+
+  @example
+  {% render 'acla-family-item', item_product: product, family_id: section.id, position: 1 %}
 {% enddoc %}
 
 {% liquid
   assign item_variant = item_product.selected_or_first_available_variant
   assign color_name = item_product.title | split: ' - Color: ' | last
+  assign color_name = color_name | split: ' - Size: ' | last
   assign color_code = item_variant.sku
   if color_code contains 'OMB-'
     assign color_code = color_code | remove_first: 'OMB-'
     unless color_code contains '-G'
       assign color_code = color_code | replace: '-', '.'
     endunless
+  elsif color_code contains 'CMI-'
+    assign color_code = color_code | remove_first: 'CMI-'
   endif
-  assign swatch = item_product.metafields.custom.swatch_color.value
+  assign item_image = item_variant.featured_image | default: item_product.featured_image
   assign rule_min = item_variant.quantity_rule.min | default: 1
   assign rule_increment = item_variant.quantity_rule.increment | default: 1
   assign already_in_cart = cart | item_count_for_variant: item_variant.id
-  assign image_alt = item_product.featured_image.alt | default: color_name
-  assign color_image_url = item_product.metafields.custom.color_image.value
-  if color_image_url == blank
-    if item_product.featured_image
-      assign color_image_url = item_product.featured_image | image_url: width: 720
-    endif
+  assign image_alt = item_image.alt | default: color_name
+  if item_image
+    assign color_image_url = item_image | image_url: width: 720
+  else
+    assign color_image_url = item_product.metafields.custom.color_image.value
   endif
   assign orderable = false
   if item_product.has_only_default_variant
@@ -35,6 +41,28 @@
   endif
 %}
 
+{% capture checkout_rate %}{% render 'acla-checkout-rate', product_resource: item_product %}{% endcapture %}
+{% liquid
+  assign checkout_rate = checkout_rate | plus: 0
+  assign reference_price = item_variant.compare_at_price | at_least: item_variant.price
+  assign remaining_percent = 100 | minus: checkout_rate
+  assign final_price = item_variant.price | times: remaining_percent | divided_by: 100.0 | round
+  assign savings = 0
+  if reference_price > 0
+    assign savings = reference_price | minus: final_price | times: 100.0 | divided_by: reference_price | round
+  endif
+%}
+{% capture thumbnail_html %}
+  {% if item_image %}
+    {{ item_image | image_url: width: 256 | image_tag: loading: 'lazy', decoding: 'async', widths: '128, 256', sizes: 'auto, 128px', alt: image_alt }}
+  {% else %}
+    {{ 'product-1' | placeholder_svg_tag: 'acla-family__photo-placeholder' }}
+  {% endif %}
+{% endcapture %}
+
+{% if format == 'json' %}
+  {"productId":{{ item_product.id | append: '' | json }},"variantId":{{ item_variant.id | append: '' | json }},"name":{{ color_name | json }},"code":{{ color_code | json }},"sku":{{ item_variant.sku | json }},"search":{{ item_product.title | append: ' ' | append: item_variant.sku | json }},"price":{{ item_variant.price | json }},"position":{{ position | json }},"available":{{ orderable | append: '' | json }},"ruleMin":{{ rule_min | json }},"ruleIncrement":{{ rule_increment | json }},"ruleMax":{{ item_variant.quantity_rule.max | json }},"cartQuantity":{{ already_in_cart | json }},"stock":{% if item_variant.inventory_management != blank and item_variant.inventory_policy == 'deny' %}{{ item_variant.inventory_quantity | at_least: 0 | json }}{% else %}null{% endif %},"image":{{ color_image_url | json }},"imageAlt":{{ image_alt | json }},"url":{{ item_product.url | json }},"thumbnailHtml":{{ thumbnail_html | strip | json }},"comparePrice":{{ item_variant.compare_at_price | json }},"checkoutRate":{{ checkout_rate | json }},"defaultVariant":{{ item_product.has_only_default_variant | json }}}
+{% else %}
 <li
   class="acla-family__item{% if already_in_cart > 0 %} is-in-cart{% endif %}"
   data-family-item
@@ -45,6 +73,7 @@
   data-sku="{{ item_variant.sku | escape }}"
   data-search="{{ item_product.title | append: ' ' | append: item_variant.sku | escape }}"
   data-price="{{ item_variant.price }}"
+  data-compare-price="{{ item_variant.compare_at_price | default: 0 }}"
   data-position="{{ position }}"
   data-available="{{ orderable }}"
   data-rule-min="{{ rule_min }}"
@@ -61,7 +90,6 @@
   {% endif %}
   data-image-alt="{{ image_alt | escape }}"
   data-url="{{ item_product.url }}"
-  style="{% if swatch != blank %}--family-swatch: {{ swatch }};{% endif %}"
 >
   <button
     class="acla-family__color"
@@ -71,26 +99,20 @@
     aria-controls="FamilySelection-{{ family_id }}"
     aria-label="{{ 'acla_family.preview_color' | t: color: color_name | escape }}"
   >
-    <span class="acla-family__swatch{% if swatch == blank %} acla-family__swatch--photo{% endif %}">
-      {% if swatch == blank %}
-        {% if item_product.featured_image %}
-          {{ item_product.featured_image | image_url: width: 160 | image_tag: loading: 'lazy', widths: '80, 160', sizes: '80px', alt: image_alt }}
-        {% endif %}
-      {% endif %}
+    <span class="acla-family__swatch acla-family__swatch--photo">
+      {{ thumbnail_html }}
       <span class="acla-family__selected-mark" aria-hidden="true">✓</span>
     </span>
     <span class="acla-family__color-copy">
       {% if color_code != blank %}<span class="acla-family__color-code">{{ color_code | escape }}</span>{% endif %}
-      <span class="acla-family__color-name">{{ color_name | escape }}</span>
+      <span class="acla-family__color-name" title="{{ color_name | escape }}">{{ color_name | escape }}</span>
     </span>
   </button>
   <div class="acla-family__item-sku"><span>{{ 'acla_family.sku' | t }}</span> {{ item_variant.sku | escape }}</div>
   <div class="acla-family__item-price">
-    {% if item_variant.compare_at_price > item_variant.price %}
-      <s>{{ item_variant.compare_at_price | money }}</s>
-    {% endif %}
-    <strong>{{ item_variant.price | money }}</strong>
-    <span>{{ 'acla_family.each' | t }}</span>
+    <div class="acla-family__price-line"><span>{{ 'acla_pricing.msrp' | t }}</span><span data-item-msrp{% if item_variant.compare_at_price > item_variant.price %} class="is-discounted"{% endif %}>{% if item_variant.compare_at_price > 0 %}{{ item_variant.compare_at_price | money }}{% else %}{{ 'acla_pricing.not_listed' | t }}{% endif %}</span></div>
+    <div class="acla-family__price-line"><span>{{ 'acla_pricing.selling_price' | t }}</span><strong>{{ item_variant.price | money }}</strong></div>
+    <span class="acla-family__item-savings" data-item-savings{% if savings <= 0 %} hidden{% endif %}{% if checkout_rate > 0 %} title="{{ 'acla_savings.checkout_note' | t | escape }}"{% endif %}>{{ 'acla_savings.item' | t: percent: savings }}</span>
   </div>
   <div class="acla-family__stock-status">
     <span class="acla-family__availability{% unless orderable %} acla-family__availability--unavailable{% endunless %}" data-availability>
@@ -124,3 +146,4 @@
   </div>
   <a class="acla-family__item-link" href="{{ item_product.url }}">{{ 'acla_family.item_details' | t }} <span aria-hidden="true">↗</span></a>
 </li>
+{% endif %}

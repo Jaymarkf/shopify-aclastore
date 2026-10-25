@@ -1,0 +1,48 @@
+{% doc %}
+  Predictive and recently viewed results showing each matching product's own content.
+  @param {object} predictive - Predictive search context supplied by the section.
+  @example
+  {% render 'acla-group-predictive-results' %}
+{% enddoc %}
+{% render 'predictive-search-styles' %}
+{% if predictive.performed or search.performed %}
+  {% liquid
+    assign query = predictive.terms | default: search.terms
+    assign native_products = predictive.resources.products | default: search.results
+    assign recent = false
+    assign title = 'content.search_results_resource_products' | t
+    unless predictive.performed
+      assign recent = true
+      assign title = 'content.recently_viewed_products' | t
+    endunless
+    assign count = 0
+  %}
+    {% capture cards %}
+      {% for product in native_products %}
+        {% if product.object_type == 'product' or predictive.performed %}
+          {% assign count = count | plus: 1 %}
+          {% capture last_url %}{% render 'acla-search-product-url', product_resource: product %}{% endcapture %}
+          <li class="predictive-search-results__card predictive-search-results__card--product" ref="{% if recent %}recentlyViewedItems[]{% else %}resultsItems[]{% endif %}">
+            {% render 'resource-card', resource_type: 'product', resource: product, image_width: 352, image_hover: false, image_aspect_ratio: '1', product_view_context: 'search' %}
+          </li>
+        {% endif %}
+      {% endfor %}
+    {% endcapture %}
+    <div id="predictive-search-results" class="predictive-search-dropdown" role="listbox" aria-label="{{ 'content.search_results_label' | t }}" data-transition-container>
+      <div class="predictive-search-results__inner" data-search-results>
+        <div class="visually-hidden" role="status">{{ 'accessibility.search_results_count' | t: count: count, query: query }}</div>
+        {% if count > 0 %}
+          <div id="predictive-search-products" class="predictive-search-results__products{% if recent %} recently-viewed-wrapper{% endif %}"{% if recent %} ref="recentlyViewedWrapper"{% endif %}>
+            <h4 class="predictive-search-results__title"{% if recent %} ref="recentlyViewedTitle[]"{% endif %}>
+              {{ title }}
+              {% if recent %}<button type="button" class="button button-unstyled" on:click="/clearRecentlyViewedProducts">{{ 'actions.clear' | t }}</button>{% endif %}
+            </h4>
+            <ul class="predictive-search-results__list predictive-search-results__wrapper-products list-unstyled">{{ cards }}</ul>
+          </div>
+          {% if count == 1 %}<div data-single-result-url="{{ last_url }}"></div>{% endif %}
+        {% else %}
+          <p class="predictive-search-results__no-results">{{ 'content.no_products_found' | t }}</p>
+        {% endif %}
+      </div>
+    </div>
+{% endif %}

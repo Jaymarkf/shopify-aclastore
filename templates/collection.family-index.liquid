@@ -1,0 +1,19 @@
+{% layout none %}
+{% comment %}Current collection metadata for full-group search; photos and purchase details load separately.{% endcomment %}
+{% paginate collection.products by 250 %}
+  {% capture entries %}
+    {% for item_product in collection.products %}
+      {% liquid
+        assign item_variant = item_product.selected_or_first_available_variant
+        assign item_name = item_product.title | split: ' - Color: ' | last | split: ' - Size: ' | last
+        assign orderable = false
+        if item_product.has_only_default_variant and item_variant.available
+          assign orderable = true
+        endif
+      %}
+      {% unless forloop.first %},{% endunless %}
+      [{{ item_product.handle | json }},{{ item_name | json }},{{ item_variant.sku | json }},{{ item_variant.price | json }},{{ item_product.id | append: '' | json }},{{ orderable | json }},{% if item_variant.inventory_management != blank and item_variant.inventory_policy == 'deny' %}{{ item_variant.inventory_quantity | at_least: 0 | json }}{% else %}null{% endif %},{{ item_variant.compare_at_price | default: 0 | json }},{% render 'acla-checkout-rate', product_resource: item_product %}]
+    {% endfor %}
+  {% endcapture %}
+  <script type="application/json" data-family-index>{"collectionId":{{ collection.id | append: '' | json }},"count":{{ paginate.items | json }},"page":{{ paginate.current_page | json }},"pages":{{ paginate.pages | json }},"entries":[{{ entries | replace: '<', '\u003c' }}]}</script>
+{% endpaginate %}

@@ -1,0 +1,27 @@
+{% layout none %}
+{% comment %}Prices only for legacy reference-based groups; no images or purchase markup.{% endcomment %}
+{% liquid
+  assign keys = 'family_products,family_products_more' | split: ','
+  assign seen = product.id | prepend: '|' | append: '|'
+  assign count = 0
+%}
+{% capture entries %}
+  {% for key in keys %}
+    {% assign members = product.metafields.custom[key].value %}
+    {% if members != blank %}
+      {% paginate members by 128 %}
+        {% for member in members %}
+          {% assign member_key = member.id | prepend: '|' | append: '|' %}
+          {% unless seen contains member_key %}
+            {% assign seen = seen | append: member_key %}
+            {% assign variant = member.selected_or_first_available_variant %}
+            {% if count > 0 %},{% endif %}
+            {"price":{{ variant.price | json }},"comparePrice":{{ variant.compare_at_price | default: 0 | json }},"checkoutRate":{% render 'acla-checkout-rate', product_resource: member %}}
+            {% assign count = count | plus: 1 %}
+          {% endunless %}
+        {% endfor %}
+      {% endpaginate %}
+    {% endif %}
+  {% endfor %}
+{% endcapture %}
+<script type="application/json" data-family-savings>[{{ entries }}]</script>

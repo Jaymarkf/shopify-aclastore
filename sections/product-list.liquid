@@ -17,6 +17,7 @@
     section--{{ section.settings.section_width }}
     {% if section.settings.background_color != blank %}color-custom-{{ section.id }}{% endif %}
     section-resource-list
+    {% if section.settings.contain_carousel and section.settings.section_width == 'page-width' %}product-list--contained{% endif %}
     spacing-style
     gap-style
   "
@@ -29,39 +30,21 @@
     {%- content_for 'block', type: '_product-list-content', id: 'static-header' -%}
   </div>
 
+  {% liquid
+    assign list_source = settings.catalog_groups | default: collections['storefront-product-groups'] | default: collections.markers
+    assign rendered_count = 0
+  %}
   {% capture list_items %}
-    {% if section.settings.collection != blank and shop.products_count != 0 %}
-      {% paginate section.settings.collection.products by max_items %}
-        {% for product in section.settings.collection.products limit: max_items %}
-        <div
-          class="resource-list__item"
-        >
-            {% content_for 'block',
-              type: '_product-card',
-              id: 'static-product-card',
-              closest.product: product,
-              product_view_context: 'collection'
-            %}
-          </div>
-
-          {% unless forloop.last %}
-            <!--@list/split-->
-          {% endunless %}
-        {% endfor %}
-      {% endpaginate %}
-    {% else %}
-      {% for i in (1..max_items) %}
-        <div
-          class="resource-list__item"
-        >
-            {% content_for 'block', type: '_product-card', id: 'static-product-card', closest.product: null %}
-        </div>
-
-        {% unless forloop.last %}
-          <!--@list/split-->
-        {% endunless %}
-      {% endfor %}
-    {% endif %}
+    {% for product in list_source.products %}
+      {% capture visible %}{% render 'acla-group-visible', product_resource: product, target_collection: section.settings.collection %}{% endcapture %}
+      {% if visible != 'true' %}{% continue %}{% endif %}
+      {% if rendered_count > 0 %}<!--@list/split-->{% endif %}
+      <div class="resource-list__item">
+        {% content_for 'block', type: '_product-card', id: 'static-product-card', closest.product: product, product_view_context: 'collection' %}
+      </div>
+      {% assign rendered_count = rendered_count | plus: 1 %}
+      {% if rendered_count >= max_items %}{% break %}{% endif %}
+    {% endfor %}
   {% endcapture %}
 
   {% liquid
@@ -73,7 +56,7 @@
     list_items: list_items,
     list_items_array: list_items_array,
     settings: section.settings,
-    slide_count: max_items,
+    slide_count: rendered_count,
     content_type: 'products',
     test_id: 'resource-list-grid'
   %}
@@ -85,6 +68,22 @@
     {%- content_for 'blocks' -%}
   </div>
 </div>
+
+{% stylesheet %}
+  .product-list--contained > .resource-list.force-full-width {
+    grid-column: 2;
+    min-inline-size: 0;
+  }
+
+  .product-list--contained slideshow-component.resource-list__carousel {
+    --gutter-slide-width: 0px;
+    --peek-next-slide-size: 0px;
+  }
+
+  .product-list--contained slideshow-component.resource-list__carousel > slideshow-container > slideshow-arrows {
+    padding-inline: 0;
+  }
+{% endstylesheet %}
 
 {% schema %}
 {
@@ -286,6 +285,14 @@
         }
       ],
       "default": "page-width"
+    },
+    {
+      "type": "checkbox",
+      "id": "contain_carousel",
+      "label": "t:acla_featured.contain",
+      "info": "t:acla_featured.contain_help",
+      "default": false,
+      "visible_if": "{{ section.settings.layout_type == 'carousel' and section.settings.section_width == 'page-width' }}"
     },
     {
       "type": "select",

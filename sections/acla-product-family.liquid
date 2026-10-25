@@ -1,34 +1,71 @@
+{% comment %}
+  Independent product group with searchable, deferred option details.
+  @example Assign the product-family template to a display parent.
+{% endcomment %}
 {% liquid
-  assign family_products = product.metafields.custom.family_products.value | default: section.settings.products
-  assign family_count = 0
-  assign minimum_price = nil
-  assign maximum_price = 0
-  for family_product in family_products limit: 50
-    unless family_product.id == product.id
-      assign family_count = family_count | plus: 1
-      if minimum_price == nil
-        assign minimum_price = family_product.price
-      elsif family_product.price < minimum_price
-        assign minimum_price = family_product.price
-      endif
-      if family_product.price > maximum_price
-        assign maximum_price = family_product.price
-      endif
-    endunless
-  endfor
-  assign hero_image = product.featured_image
-  if hero_image == blank
-    assign hero_image = family_products.first.featured_image
+  assign family_products = product.metafields.custom.family_products.value
+  assign family_more_products = product.metafields.custom.family_products_more.value
+  assign family_count = family_products.count | default: 0
+  assign family_more_count = family_more_products.count | default: 0
+  assign family_count = family_count | plus: family_more_count
+  assign family_page_size = 24
+  if family_products == blank
+    assign family_products = family_more_products
   endif
+  if family_count == 0
+    assign family_products = section.settings.products
+    assign family_count = family_products.size | default: 0
+    assign family_page_size = 50
+  endif
+  assign family_collection = product.metafields.custom.family_collection.value
+  if family_collection != blank
+    assign family_products = family_collection.products
+    assign family_count = family_collection.products_count
+    assign family_page_size = 24
+  endif
+  assign initial_count = 0
+  assign minimum_price = product.price
+  assign family_seen_ids = product.id | prepend: '|' | append: '|'
+  assign family_structured_entries = ''
+  assign family_catalog_entries = ''
+  assign hero_image = product.featured_image | default: family_products.first.featured_image
   assign hero_alt = hero_image.alt | default: product.title
   assign question_count = section.blocks | where: 'type', 'question' | size
   assign app_count = section.blocks | where: 'type', '@app' | size
 %}
 
+{% capture family_items %}
+  {% if family_products != blank %}
+      {% for family_product in family_products limit: family_page_size %}
+        {% assign family_item_key = family_product.id | prepend: '|' | append: '|' %}
+        {% unless family_seen_ids contains family_item_key %}
+          {% assign family_seen_ids = family_seen_ids | append: family_item_key %}
+          {% assign initial_count = initial_count | plus: 1 %}
+          {% render 'acla-family-item', item_product: family_product, family_id: section.id, position: initial_count %}
+          {% capture catalog_entry %}{% if initial_count > 1 %},{% endif %}{% render 'acla-family-item', item_product: family_product, family_id: section.id, position: initial_count, format: 'json' %}{% endcapture %}
+          {% assign family_catalog_entries = family_catalog_entries | append: catalog_entry %}
+          {% capture structured_entry %}{% if initial_count > 1 %},{% endif %}{"@type":"ListItem","position":{{ initial_count }},"name":{{ family_product.title | json }},"url":{{ request.origin | append: family_product.url | json }}}{% endcapture %}
+          {% assign family_structured_entries = family_structured_entries | append: structured_entry %}
+        {% endunless %}
+      {% endfor %}
+  {% endif %}
+{% endcapture %}
+{% capture family_cart_status %}{% render 'acla-cart-status', product_resource: product %}{% endcapture %}
+
 <acla-product-family
   class="acla-family"
   id="ProductFamily-{{ section.id }}"
   data-section-id="{{ section.id }}"
+  data-product-id="{{ product.id }}"
+  {% if product.handle == 'olo-premium-markers-brush' or product.handle == 'copic-ciao' %}data-mobile-color-lines{% endif %}
+  data-option-count="{{ family_count }}"
+  data-scale-module="{{ 'acla-family-scale.js' | asset_url }}"
+  {% if family_collection != blank %}
+    data-index-url="{{ family_collection.url }}?view=family-index"
+    data-records-url="{{ family_collection.url }}?view=family-records"
+  {% endif %}
+  data-scale-test-count="{% if product.id == section.settings.performance_test_product.id %}{{ section.settings.performance_test_count }}{% else %}0{% endif %}"
+  data-catalog-url="{{ product.url }}?view=family-options"
   data-view="{{ section.settings.default_view }}"
   data-currency="{{ localization.country.currency.iso_code }}"
   data-locale="{{ request.locale.iso_code }}"
@@ -49,30 +86,14 @@
       <div class="acla-family__gallery">
         <button class="acla-family__main-image" type="button" data-open-image aria-label="{{ 'acla_family.zoom_image' | t }}"{% if hero_image == blank %} disabled{% endif %}>
           {% if hero_image %}
-            {{ hero_image | image_url: width: 1200 | image_tag: widths: '400, 600, 900, 1200', sizes: '(min-width: 990px) 560px, (min-width: 750px) 50vw, 100vw', loading: 'eager', fetchpriority: 'high', alt: hero_alt, data-main-image: '' }}
+            {% assign hero_image_id = 'FamilyHeroImage-' | append: section.id %}
+            {{ hero_image | image_url: width: 1200 | image_tag: widths: '400, 600, 900, 1200', sizes: '(min-width: 990px) 560px, (min-width: 750px) 50vw, 100vw', loading: 'eager', fetchpriority: 'high', alt: hero_alt, id: hero_image_id, data-main-image: '' }}
           {% else %}
             {{ 'product-1' | placeholder_svg_tag: 'acla-family__placeholder' }}
           {% endif %}
           <span class="acla-family__zoom-icon" aria-hidden="true">⌕</span>
         </button>
-        {% if product.images.size > 1 %}
-          <div class="acla-family__thumbnails" role="group" aria-label="{{ 'acla_family.product_images' | t }}">
-            {% for gallery_image in product.images limit: 8 %}
-              {% assign gallery_alt = gallery_image.alt | default: product.title %}
-              <button
-                type="button"
-                class="acla-family__thumbnail"
-                data-gallery-image="{{ gallery_image | image_url: width: 1200 }}"
-                data-gallery-srcset="{{ gallery_image | image_url: width: 400 }} 400w, {{ gallery_image | image_url: width: 900 }} 900w, {{ gallery_image | image_url: width: 1200 }} 1200w"
-                data-gallery-alt="{{ gallery_alt | escape }}"
-                aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}"
-                aria-label="{{ 'acla_family.image_number' | t: number: forloop.index | escape }}"
-              >
-                {{ gallery_image | image_url: width: 140 | image_tag: widths: '70, 140', sizes: '64px', loading: 'lazy', alt: gallery_alt }}
-              </button>
-            {% endfor %}
-          </div>
-        {% endif %}
+        {% render 'acla-family-thumbnails', images: product.images, product_title: product.title, section_id: section.id %}
         <p class="acla-family__image-note">{{ 'acla_family.image_note' | t }}</p>
       </div>
 
@@ -89,11 +110,13 @@
           </p>
         {% endif %}
         {% if family_count > 0 %}
+          <p class="acla-family__list-price" data-family-msrp hidden>{{ 'acla_pricing.msrp' | t }} <span data-family-msrp-value></span></p>
           <p class="acla-family__hero-price">
-            {% if minimum_price != maximum_price %}<span>{{ 'acla_family.from' | t }}</span>{% endif %}
-            <strong>{{ minimum_price | money }}</strong><span>{{ 'acla_family.each' | t }}</span>
+            <span>{{ 'acla_pricing.selling_price' | t }}</span>
+            <span data-family-price-from{% if family_count <= initial_count %} hidden{% endif %}>{{ 'acla_family.from' | t }}</span>
+            <strong data-family-price>{{ minimum_price | money }}</strong><span>{{ 'acla_family.each' | t }}</span>
             {% render 'acla-promotion-badge', product_resource: product %}
-            {% render 'acla-cart-status', product_resource: product %}
+            {{ family_cart_status }}
           </p>
         {% endif %}
         {% if product.description != blank %}
@@ -158,7 +181,8 @@
             </button>
           </div>
         </div>
-        <div class="acla-family__results-meta"><p data-result-count role="status">{{ 'acla_family.results_count' | t: shown: family_count, total: family_count }}</p><span>{{ 'acla_family.swatch_note' | t }}</span></div>
+        {% assign initial_visible_count = family_count | at_most: family_page_size %}
+        <div class="acla-family__results-meta"><p data-result-count role="status" tabindex="-1">{{ 'acla_family.results_count' | t: shown: initial_visible_count, total: family_count }}</p><span>{{ 'acla_family.swatch_note' | t }}</span></div>
 
         <div class="acla-family__selection" id="FamilySelection-{{ section.id }}" data-color-selection hidden>
           <div class="acla-family__selection-image"><img data-selected-image width="260" height="220" alt="" loading="lazy"></div>
@@ -166,9 +190,10 @@
             <p class="acla-family__eyebrow">{{ 'acla_family.selected_color' | t }}</p>
             <h3 data-selected-name></h3>
             <p class="acla-family__selection-sku">{{ 'acla_family.sku' | t }} <span data-selected-sku></span></p>
-            <p class="acla-family__selection-price"><strong data-selected-price></strong> <span>{{ 'acla_family.each' | t }}</span></p>
+            <p class="acla-family__selection-msrp"><span>{{ 'acla_pricing.msrp' | t }}</span> <span data-selected-msrp></span></p>
+            <p class="acla-family__selection-price"><span>{{ 'acla_pricing.selling_price' | t }}</span> <strong data-selected-price></strong> <span>{{ 'acla_family.each' | t }}</span></p>
             <p data-selected-availability></p>
-            {% render 'acla-cart-status', product_resource: product %}
+            {{ family_cart_status }}
             <div class="acla-family__selection-actions">
               <label class="visually-hidden" for="FamilySingleQuantity-{{ section.id }}">{{ 'acla_family.quantity' | t }}</label>
               <input id="FamilySingleQuantity-{{ section.id }}" type="number" data-selected-quantity value="1" min="1" inputmode="numeric" autocomplete="off">
@@ -180,13 +205,13 @@
         </div>
 
         <div class="acla-family__list-heading" aria-hidden="true"><span>{{ 'acla_family.color' | t }}</span><span>{{ 'acla_family.sku' | t }}</span><span>{{ 'acla_family.price' | t }}</span><span>{{ 'acla_family.availability' | t }}</span><span>{{ 'acla_family.quantity' | t }}</span><span></span></div>
-        <ul class="acla-family__items" data-family-items aria-label="{{ 'acla_family.available_colors' | t }}">
-          {% for family_product in family_products limit: 50 %}
-            {% unless family_product.id == product.id %}
-              {% render 'acla-family-item', item_product: family_product, family_id: section.id, position: forloop.index %}
-            {% endunless %}
-          {% endfor %}
+        <ul class="acla-family__items" id="FamilyItems-{{ section.id }}" data-family-items aria-label="{{ 'acla_family.available_colors' | t }}">
+          {{ family_items }}
         </ul>
+        <div class="acla-family__more" data-family-more hidden>
+          <span data-scroll-status aria-hidden="true" hidden>{{ 'acla_family.loading_options' | t }}</span>
+          <button type="button" class="acla-family__button" data-retry-options aria-controls="FamilyItems-{{ section.id }}" hidden>{{ 'acla_family.retry_options' | t }}</button>
+        </div>
         <div class="acla-family__empty-results" data-empty-results hidden><p>{{ 'acla_family.no_results' | t }}</p><button type="button" class="acla-family__text-link" data-clear-filters>{{ 'acla_family.clear_filters' | t }}</button></div>
         <div class="acla-family__feedback" data-family-feedback role="status" aria-live="polite" tabindex="-1" hidden></div>
 
@@ -195,7 +220,7 @@
           <div class="acla-family__order-total"><span>{{ 'acla_family.subtotal' | t }}</span><strong data-selected-total>{{ 0 | money }}</strong></div>
           <button type="button" class="acla-family__button acla-family__add-selected" data-add-selected data-cart-action disabled>{{ 'acla_family.add_selected' | t }} <span aria-hidden="true">→</span></button>
         </div>
-        <noscript><p>{{ 'acla_family.no_javascript' | t }}</p><style>.acla-family__quantity,.acla-family__order-bar,.acla-family__toolbar{display:none!important}.acla-family__item-link{display:block!important}</style></noscript>
+        <noscript><p>{{ 'acla_family.no_javascript' | t }}</p><p><a href="{{ product.url }}?view=family-options">{{ 'acla_family.view_all_options' | t }}</a></p><style>.acla-family__quantity,.acla-family__order-bar,.acla-family__toolbar{display:none!important}.acla-family__item-link{display:block!important}</style></noscript>
       {% else %}
         <div class="acla-family__empty-results">
           {% if request.design_mode %}<p>{{ 'acla_family.editor_empty' | t }}</p>{% else %}<p>{{ 'acla_family.empty_group' | t }}</p>{% endif %}
@@ -242,20 +267,29 @@
       "partial": {{ 'acla_family.cart_partial' | t | json }},
       "quantity_error": {{ 'acla_family.quantity_error' | t | json }},
       "read_more": {{ 'acla_family.read_more' | t | json }},
-      "show_less": {{ 'acla_family.show_less' | t | json }}
+      "show_less": {{ 'acla_family.show_less' | t | json }},
+      "preview_color": {{ 'acla_family.preview_color' | t: color: '[color]' | json }},
+      "quantity_color": {{ 'acla_family.quantity_color' | t: color: '[color]' | json }},
+      "decrease_color": {{ 'acla_family.decrease_color' | t: color: '[color]' | json }},
+      "increase_color": {{ 'acla_family.increase_color' | t: color: '[color]' | json }},
+      "view_options": {{ 'acla_family.view_options' | t | json }}
+      ,"loading_options": {{ 'acla_family.loading_options' | t | json }}
+      ,"load_error": {{ 'acla_family.load_error' | t | json }}
+      ,"total_options": {{ 'acla_family.total_options' | t: count: '[count]' | json }}
+      ,"performance_test": {{ 'acla_family.performance_test' | t: count: '[count]', real: '[real]' | json }}
+      ,"test_cart_disabled": {{ 'acla_family.test_cart_disabled' | t | json }}
+      ,"search_match": {{ 'acla_family.search_match' | t: product: '[product]' | json }}
+      ,"retry_options": {{ 'acla_family.retry_options' | t | json }}
+      ,"item_savings": {{ 'acla_savings.item' | t: percent: '[percent]' | json }}
+      ,"checkout_savings_note": {{ 'acla_savings.checkout_note' | t | json }}
+      ,"msrp_not_listed": {{ 'acla_pricing.not_listed' | t | json }}
     }
   </script>
+  <script type="application/json" data-family-catalog>[{{ family_catalog_entries | replace: '<', '\u003c' }}]</script>
   {% if family_count > 0 %}
     <script type="application/ld+json">
       {"@context":"https://schema.org","@type":"ItemList","name":{{ product.title | json }},"numberOfItems":{{ family_count }},"itemListElement":[
-        {% assign structured_position = 0 %}
-        {% for family_product in family_products limit: 50 %}
-          {% unless family_product.id == product.id %}
-            {% if structured_position > 0 %},{% endif %}
-            {% assign structured_position = structured_position | plus: 1 %}
-            {"@type":"ListItem","position":{{ structured_position }},"name":{{ family_product.title | json }},"url":{{ request.origin | append: family_product.url | json }}}
-          {% endunless %}
-        {% endfor %}
+        {{ family_structured_entries }}
       ]}
     </script>
   {% endif %}
@@ -285,15 +319,12 @@
   .acla-family__main-image img{width:100%;height:100%;max-height:420px;object-fit:contain}
   .acla-family__placeholder{height:100%;width:100%}
   .acla-family__zoom-icon{position:absolute;right:14px;bottom:12px;display:grid;place-items:center;width:32px;height:32px;border:1px solid var(--family-border);border-radius:50%;background:#fff;font-size:24px;line-height:1}
-  .acla-family__thumbnails{display:flex;justify-content:center;gap:10px;margin-top:16px;overflow-x:auto}
-  .acla-family__thumbnail{width:66px;height:66px;flex:0 0 66px;background:#fff;border:1px solid var(--family-border);border-radius:3px;padding:5px}
-  .acla-family__thumbnail[aria-pressed=true]{border-color:var(--family-accent);box-shadow:0 0 0 1px var(--family-accent)}
-  .acla-family__thumbnail img{height:100%;width:100%;object-fit:contain}
   .acla-family__image-note{text-align:center;font-size:11px;color:var(--family-muted);margin-top:14px!important}
   .acla-family__brand{text-transform:uppercase;letter-spacing:.16em;font-size:12px;font-weight:700;color:var(--family-accent)}
   .acla-family__hero-price{display:flex;align-items:baseline;gap:8px;margin-bottom:18px!important}
   .acla-family__hero-price strong{font-size:29px;letter-spacing:-.03em}
   .acla-family__hero-price span{font-size:13px;color:var(--family-muted)}
+  .acla-family__list-price{font-size:13px;color:var(--family-muted);margin-block-end:6px!important}
   .acla-family__description-wrap{--description-preview-height:190px}
   .acla-family__description-window{position:relative;display:flow-root}
   .acla-family__description-wrap[data-collapsible=true] .acla-family__description-window{overflow:clip}
@@ -333,24 +364,35 @@
   .acla-family__view-buttons svg{width:20px;height:20px}
   .acla-family__results-meta{display:flex;justify-content:space-between;gap:20px;align-items:center;font-size:11px;color:var(--family-muted);padding:18px 0}
   .acla-family__results-meta>span{text-align:right}
-  .acla-family__items{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:0;list-style:none;padding:0;margin:0;border-top:1px solid var(--family-border);border-left:1px solid var(--family-border)}
-  .acla-family__item{position:relative;display:flex;flex-direction:column;min-width:0;gap:9px;padding:18px 13px 14px;border-bottom:1px solid var(--family-border);border-right:1px solid var(--family-border);background:#fff}
+  .acla-family__items{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;list-style:none;padding:0;margin:0;border-top:1px solid var(--family-border);border-left:1px solid var(--family-border)}
+  .acla-family__item{position:relative;display:flex;flex-direction:column;min-width:0;gap:8px;padding:12px;border-bottom:1px solid var(--family-border);border-right:1px solid var(--family-border);background:#fff}
   .acla-family__item:has([data-family-quantity]:not([value="0"])):focus-within{z-index:1}
   .acla-family__item.is-selected{background:#f5faf6;box-shadow:inset 0 0 0 1px var(--family-accent)}
-  .acla-family__color{display:flex;flex-direction:column;align-items:stretch;gap:10px;background:none;border:0;padding:0;color:inherit;text-align:left;min-width:0}
-  .acla-family__swatch{position:relative;display:block;height:55px;border-radius:3px;background:var(--family-swatch,#f2f3f2);box-shadow:inset 0 0 0 1px #00000010;transition:transform .15s}
-  .acla-family__swatch--photo{background:#fff}.acla-family__swatch img{width:100%;height:100%;object-fit:contain}
+  .acla-family .acla-family__item.is-search-match{isolation:isolate;background:color-mix(in srgb,var(--family-accent) 10%,#fff);box-shadow:none;outline:none}
+  .acla-family__item.is-search-match::after{content:'';position:absolute;inset:0;z-index:-1;border:0;border-radius:inherit;background:var(--family-accent);opacity:0;pointer-events:none;animation:acla-family-search-pulse calc(var(--animation-speed-slow) * 10) var(--animation-timing-hover) infinite}
+  .acla-family__color{display:flex;flex-direction:column;align-items:stretch;gap:8px;background:none;border:0;padding:0;color:inherit;text-align:left;min-width:0}
+  .acla-family__swatch{position:relative;display:block;align-self:center;inline-size:100%;max-inline-size:112px;aspect-ratio:1;border-radius:3px;overflow:hidden;background:#fff;box-shadow:inset 0 0 0 1px #00000010;transition:transform .15s}
+  .acla-family__swatch :is(img,svg){display:block;width:100%;height:100%;object-fit:contain}
   .acla-family__color:hover .acla-family__swatch{transform:translateY(-2px)}
   .acla-family__selected-mark{display:none;position:absolute;right:5px;bottom:5px;border-radius:50%;background:#fff;color:var(--family-accent);height:20px;width:20px;text-align:center;font-size:13px;box-shadow:0 1px 4px #0002;line-height:20px}
   .acla-family__item.is-selected .acla-family__selected-mark{display:block}
-  .acla-family__color-code{display:block;font-size:11px;font-weight:750;letter-spacing:.02em;margin-bottom:2px;line-height:1.2}
-  .acla-family__color-name{display:block;font-size:12px;line-height:1.4;min-height:34px;text-wrap:pretty}
-  .acla-family__item-price{display:flex;align-items:baseline;gap:4px;flex-wrap:wrap;margin-top:auto;font-size:12px}
+  .acla-family__color-code{display:block;font-size:11px;font-weight:750;letter-spacing:.02em;margin-bottom:2px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .acla-family__color-name{display:block;font-size:12px;line-height:1.4;min-height:34px;overflow-wrap:anywhere;text-wrap:wrap}
+  .acla-family__mobile-name{display:none}
+  .acla-family[data-view=grid] .acla-family__color-copy{block-size:50px;min-width:0}
+  .acla-family[data-view=grid] .acla-family__color-name{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .acla-family[data-view=grid] .acla-family__stock-status>.acla-cart-status{position:absolute;inset-block-start:8px;inset-inline-end:8px;z-index:1;max-inline-size:calc(100% - 16px);pointer-events:none}
+  .acla-family__item-price{display:flex;align-items:baseline;gap:4px;flex-wrap:wrap;margin-top:0;font-size:12px}
   .acla-family__item-price strong{font-weight:700}.acla-family__item-price span{color:var(--family-muted);font-size:10px}.acla-family__item-price s{color:var(--family-muted);font-size:10px}
+  .acla-family__item-price .acla-family__item-savings{flex-basis:100%;color:var(--family-accent);font-weight:600}
+  .acla-family__price-line{display:flex;align-items:baseline;justify-content:space-between;gap:4px;inline-size:100%;min-inline-size:0}
+  .acla-family__price-line [data-item-msrp]{white-space:nowrap}
+  .acla-family__price-line .is-discounted,.acla-family__selection-msrp .is-discounted{text-decoration:line-through}
+  .acla-family__selection-msrp{color:var(--family-muted);font-size:12px}
   .acla-family__availability{color:var(--family-accent);font-size:10px;display:flex;align-items:center;gap:4px}
   .acla-family__availability::before{content:'';display:block;width:5px;height:5px;background:currentColor;border-radius:50%;flex-shrink:0}
   .acla-family__availability--unavailable{color:#757575}
-  .acla-family__quantity{display:grid;grid-template-columns:27px minmax(25px,1fr) 27px;height:32px;border:1px solid #cdd5cf;border-radius:3px;overflow:hidden;background:#fff}
+  .acla-family__quantity{display:grid;grid-template-columns:36px minmax(25px,1fr) 36px;height:38px;border:1px solid #cdd5cf;border-radius:3px;overflow:hidden;background:#fff}
   .acla-family__quantity button{border:0;background:#fff;padding:0;font-size:16px;color:#3f4d43}
   .acla-family__quantity input{appearance:textfield;-moz-appearance:textfield;width:100%;border:0;border-inline:1px solid #e3e7e3;background:#fff;border-radius:0;text-align:center;font-size:12px;padding:2px;color:inherit;min-width:0}
   .acla-family input[type=number]::-webkit-inner-spin-button,.acla-family input[type=number]::-webkit-outer-spin-button{appearance:none;margin:0}
@@ -361,7 +403,7 @@
   .acla-family[data-view=list] .acla-family__items{display:block;border-left:0}
   .acla-family[data-view=list] .acla-family__item{display:grid;grid-template-columns:minmax(220px,2.3fr) 1fr .8fr .8fr 108px 62px;gap:20px;align-items:center;padding:16px;border-left:1px solid var(--family-border)}
   .acla-family[data-view=list] .acla-family__color{flex-direction:row;align-items:center;gap:14px}
-  .acla-family[data-view=list] .acla-family__swatch{width:46px;height:44px;flex:0 0 46px}
+  .acla-family[data-view=list] .acla-family__swatch{width:64px;height:64px;flex:0 0 64px;align-self:center}
   .acla-family[data-view=list] .acla-family__color-name{min-height:0;font-size:13px}
   .acla-family[data-view=list] .acla-family__item-sku{display:block}.acla-family[data-view=list] .acla-family__item-sku>span{display:none}
   .acla-family[data-view=list] .acla-family__item-price{margin-top:0}
@@ -381,6 +423,12 @@
   .acla-family__order-total{display:flex;flex-direction:column;text-align:right}.acla-family__order-total span{font-size:11px;color:var(--family-muted)}.acla-family__order-total strong{font-size:24px;letter-spacing:-.03em}
   .acla-family__add-selected{min-width:235px}
   .acla-family__empty-results{text-align:center;padding:45px 20px;border:1px solid var(--family-border);background:var(--family-soft)}.acla-family__empty-results p{margin-bottom:10px}
+  .acla-family[data-virtualized=true] .acla-family__item{block-size:var(--family-virtual-row-height)}
+  .acla-family[data-virtualized=true][data-view=list] .acla-family__color-name{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .acla-family__virtual-spacer{grid-column:1/-1;list-style:none;pointer-events:none;padding:0;margin:0;border:0}
+  .acla-family__performance-note{padding:14px 18px;border:1px solid var(--family-border);background:var(--family-soft);margin-block:12px;font-size:13px}
+  .acla-family__item.is-loading .acla-family__swatch{background:var(--family-soft)}
+  .acla-family__more{display:flex;justify-content:center;padding-block:24px 0}
   .acla-family__feedback{padding:15px 20px;margin-top:20px;border:1px solid #bed6c3;border-radius:3px;background:#f1f8f3;font-size:13px}
   .acla-family__feedback[data-error=true]{background:#fff6f3;border-color:#e3b8aa;color:#842f19}.acla-family__feedback a{margin-left:10px;text-decoration:underline;font-weight:650;white-space:nowrap}
   .acla-family__questions,.acla-family__reviews{border-top:1px solid var(--family-border);margin-top:48px;padding-top:32px}
@@ -391,9 +439,10 @@
   .acla-family__questions details>div{padding-bottom:20px;max-width:800px;color:#535c55}
   .acla-family__image-dialog{position:fixed;inset:0;width:min(94vw,1050px);max-width:94vw;max-height:92vh;margin:auto;border:0;border-radius:5px;background:#fff;padding:45px;z-index:100;color:inherit}
   .acla-family__image-dialog::backdrop{background:#122319a6}.acla-family__image-dialog img{width:100%;height:calc(85vh - 90px);object-fit:contain}.acla-family__image-dialog .acla-family__close{position:absolute}
-  @media(min-width:1500px){.acla-family__items{grid-template-columns:repeat(10,minmax(0,1fr))}}
-  @media(max-width:1100px){.acla-family__hero{gap:40px}.acla-family__container{padding-inline:28px}.acla-family__items{grid-template-columns:repeat(6,minmax(0,1fr))}.acla-family__toolbar{gap:12px;padding:14px}.acla-family[data-view=list] .acla-family__item,.acla-family[data-view=list] .acla-family__list-heading{grid-template-columns:minmax(180px,2fr) 1fr .8fr .8fr 98px;gap:12px}.acla-family[data-view=list] .acla-family__item-link,.acla-family[data-view=list] .acla-family__list-heading>span:last-child{display:none}}
-  @media(max-width:749px){.acla-family__container{padding-inline:18px}.acla-family__breadcrumb{font-size:10px;gap:7px;margin-bottom:20px}.acla-family__breadcrumb [aria-current]{display:none}.acla-family__breadcrumb>span:last-of-type:not([aria-current]){display:none}.acla-family__hero{grid-template-columns:1fr;gap:28px;padding-bottom:30px}.acla-family__main-image{aspect-ratio:1.35;padding:15px}.acla-family__main-image img{max-height:285px}.acla-family__image-note{font-size:10px}.acla-family h1{margin-block:6px 12px}.acla-family__brand{font-size:11px}.acla-family__hero-price{margin-bottom:12px!important}.acla-family__hero-price strong{font-size:26px}.acla-family__summary{font-size:14px;line-height:1.75}.acla-family__intro-divider{margin-block:20px}.acla-family__shop-intro strong{font-size:15px}.acla-family__shop-intro .acla-family__button{min-height:44px;padding:10px 18px;font-size:13px}.acla-family__tabs{gap:25px;margin-top:0;margin-bottom:28px;top:var(--header-height,0px)}.acla-family__tabs a{font-size:12px;padding-block:15px 12px}.acla-family__section-heading{align-items:start;flex-direction:column;gap:8px;margin-bottom:18px}.acla-family__section-heading>p{font-size:12px;text-align:left;max-width:none}.acla-family h2{font-size:25px}.acla-family__toolbar{display:grid;grid-template-columns:1fr auto;gap:12px;padding:13px}.acla-family__search{grid-column:1/-1}.acla-family__stock-filter{font-size:11px}.acla-family__sort{grid-column:1;grid-row:3}.acla-family__sort select{width:100%;max-width:none;height:38px}.acla-family__view-buttons{grid-column:2;grid-row:2/4;align-self:end}.acla-family__results-meta{font-size:10px;align-items:start;gap:15px}.acla-family__results-meta>span{max-width:140px}.acla-family__items{grid-template-columns:repeat(3,minmax(0,1fr))}.acla-family__item{padding:13px 9px 11px;gap:8px}.acla-family__swatch{height:45px}.acla-family__color-name{font-size:11px;min-height:31px}.acla-family__quantity{grid-template-columns:25px minmax(22px,1fr) 25px;height:34px}.acla-family__item-price{font-size:11px}.acla-family__item-link{font-size:9px}.acla-family__selection{grid-template-columns:95px 1fr;padding:20px 16px;gap:15px}.acla-family__selection-image img{height:150px;padding:5px}.acla-family h3{font-size:21px}.acla-family__selection .acla-family__eyebrow{font-size:9px}.acla-family__selection-sku{font-size:10px}.acla-family__selection-actions{flex-wrap:wrap;gap:7px}.acla-family__selection-actions input{height:40px;width:48px}.acla-family__selection-actions .acla-family__button{min-height:40px;padding:9px 12px;font-size:12px;gap:5px}.acla-family__selection .acla-family__close{right:4px;top:3px;width:28px;height:28px;font-size:22px}.acla-family__selection .acla-family__text-link{font-size:11px}.acla-family[data-view=list] .acla-family__list-heading{display:none}.acla-family[data-view=list] .acla-family__item{grid-template-columns:minmax(0,1fr) 95px;gap:8px 14px;padding:16px 12px}.acla-family[data-view=list] .acla-family__color{grid-column:1;grid-row:1/4;gap:10px}.acla-family[data-view=list] .acla-family__swatch{width:37px;flex-basis:37px;height:43px}.acla-family[data-view=list] .acla-family__color-name{font-size:12px}.acla-family[data-view=list] .acla-family__item-price{grid-column:2;grid-row:1;justify-content:end}.acla-family[data-view=list] .acla-family__availability{grid-column:2;grid-row:2;justify-content:end}.acla-family[data-view=list] .acla-family__quantity{grid-column:2;grid-row:3}.acla-family[data-view=list] .acla-family__item-sku{grid-column:1/-1;font-size:9px;margin-left:47px}.acla-family__order-bar{display:grid;grid-template-columns:1fr auto;gap:12px;padding:13px 15px;padding-bottom:max(13px,env(safe-area-inset-bottom));margin-top:18px}.acla-family__order-count{font-size:12px}.acla-family__order-total strong{font-size:22px}.acla-family__add-selected{grid-column:1/-1;min-width:0;width:100%;min-height:45px;font-size:13px}.acla-family__details,.acla-family__questions{margin-top:35px;padding-top:25px}.acla-family__description{font-size:14px}.acla-family__image-dialog{padding:40px 15px 20px}.acla-family__image-dialog img{height:70vh}}
+  @media(min-width:1400px){.acla-family__items{grid-template-columns:repeat(8,minmax(0,1fr))}}
+  @media(max-width:1100px){.acla-family__hero{gap:40px}.acla-family__container{padding-inline:28px}.acla-family__items{grid-template-columns:repeat(4,minmax(0,1fr))}.acla-family__toolbar{gap:12px;padding:14px}.acla-family[data-view=list] .acla-family__item,.acla-family[data-view=list] .acla-family__list-heading{grid-template-columns:minmax(180px,2fr) 1fr .8fr .8fr 98px;gap:12px}.acla-family[data-view=list] .acla-family__item-link,.acla-family[data-view=list] .acla-family__list-heading>span:last-child{display:none}}
+  @media(max-width:749px){.acla-family__container{padding-inline:18px}.acla-family__breadcrumb{font-size:10px;gap:7px;margin-bottom:20px}.acla-family__breadcrumb [aria-current]{display:none}.acla-family__breadcrumb>span:last-of-type:not([aria-current]){display:none}.acla-family__hero{grid-template-columns:1fr;gap:28px;padding-bottom:30px}.acla-family__main-image{aspect-ratio:1.35;padding:15px}.acla-family__main-image img{max-height:285px}.acla-family__image-note{font-size:10px}.acla-family h1{margin-block:6px 12px}.acla-family__brand{font-size:11px}.acla-family__hero-price{margin-bottom:12px!important}.acla-family__hero-price strong{font-size:26px}.acla-family__summary{font-size:14px;line-height:1.75}.acla-family__intro-divider{margin-block:20px}.acla-family__shop-intro strong{font-size:15px}.acla-family__shop-intro .acla-family__button{min-height:44px;padding:10px 18px;font-size:13px}.acla-family__tabs{gap:25px;margin-top:0;margin-bottom:28px;top:var(--header-height,0px)}.acla-family__tabs a{font-size:12px;padding-block:15px 12px}.acla-family__section-heading{align-items:start;flex-direction:column;gap:8px;margin-bottom:18px}.acla-family__section-heading>p{font-size:12px;text-align:left;max-width:none}.acla-family h2{font-size:25px}.acla-family__toolbar{display:grid;grid-template-columns:1fr auto;gap:12px;padding:13px}.acla-family__search{grid-column:1/-1}.acla-family__stock-filter{font-size:11px}.acla-family__sort{grid-column:1;grid-row:3}.acla-family__sort select{width:100%;max-width:none;height:38px}.acla-family__view-buttons{grid-column:2;grid-row:2/4;align-self:end}.acla-family__results-meta{font-size:10px;align-items:start;gap:15px}.acla-family__results-meta>span{max-width:140px}.acla-family__items{grid-template-columns:repeat(2,minmax(0,1fr))}.acla-family__item{padding:12px;gap:8px}.acla-family__color-name{font-size:12px}.acla-family__quantity{grid-template-columns:40px minmax(25px,1fr) 40px;height:44px}.acla-family__quantity input{font-size:16px}.acla-family__item-price{font-size:12px}.acla-family__item-link{font-size:11px}.acla-family__selection{grid-template-columns:95px 1fr;padding:20px 16px;gap:15px}.acla-family__selection-image img{height:150px;padding:5px}.acla-family h3{font-size:21px}.acla-family__selection .acla-family__eyebrow{font-size:9px}.acla-family__selection-sku{font-size:10px}.acla-family__selection-actions{flex-wrap:wrap;gap:7px}.acla-family__selection-actions input{height:40px;width:48px}.acla-family__selection-actions .acla-family__button{min-height:40px;padding:9px 12px;font-size:12px;gap:5px}.acla-family__selection .acla-family__close{right:4px;top:3px;width:28px;height:28px;font-size:22px}.acla-family__selection .acla-family__text-link{font-size:11px}.acla-family[data-view=list] .acla-family__list-heading{display:none}.acla-family[data-view=list] .acla-family__item{grid-template-columns:minmax(0,1fr) 116px;gap:8px 14px;padding:16px 12px}.acla-family[data-view=list] .acla-family__color{grid-column:1;grid-row:1/4;gap:10px}.acla-family[data-view=list] .acla-family__swatch{width:56px;flex-basis:56px;height:56px}.acla-family[data-view=list] .acla-family__color-name{font-size:12px}.acla-family[data-view=list] .acla-family__item-price{grid-column:2;grid-row:1;justify-content:end}.acla-family[data-view=list] .acla-family__stock-status{grid-column:2;grid-row:2;align-items:end}.acla-family[data-view=list] .acla-family__quantity{grid-column:2;grid-row:3}.acla-family[data-view=list] .acla-family__item-sku{grid-column:1/-1;font-size:9px;margin-inline-start:66px}.acla-family__order-bar{display:grid;grid-template-columns:1fr auto;gap:12px;padding:13px 15px;padding-bottom:max(13px,env(safe-area-inset-bottom));margin-top:18px}.acla-family__order-count{font-size:12px}.acla-family__order-total strong{font-size:22px}.acla-family__add-selected{grid-column:1/-1;min-width:0;width:100%;min-height:45px;font-size:13px}.acla-family__details,.acla-family__questions{margin-top:35px;padding-top:25px}.acla-family__description{font-size:14px}.acla-family__image-dialog{padding:40px 15px 20px}.acla-family__image-dialog img{height:70vh}}
+  @media(min-width:600px) and (max-width:749px){.acla-family__items{grid-template-columns:repeat(3,minmax(0,1fr))}}
   .acla-family :is(button,a,input,select){transition:background-color .4s ease,border-color .4s ease,color .4s ease,box-shadow .4s ease,opacity .4s ease,transform .4s ease}
   .acla-family__button:not(:disabled):hover{transform:translateY(-2px);box-shadow:0 5px 14px #163a231c}
   .acla-family__button:not(:disabled):active{transform:translateY(0) scale(.98)}
@@ -413,6 +462,17 @@
   .acla-family__cart-flight{position:fixed;inset:auto;margin:0;padding:5px;width:48px;height:48px;border:1px solid #dfe4e0;border-radius:12px;background:#fff;box-shadow:0 6px 24px #173d2d26;pointer-events:none;z-index:2147483647;display:grid;place-items:center;overflow:hidden}
   .acla-family__cart-flight img{width:100%;height:100%;object-fit:contain}
   .acla-family__cart-flight span{width:100%;height:100%;border-radius:8px;background:var(--flight-color,#006b45)}
+  @media(max-width:749px){
+    .acla-family[data-mobile-color-lines] .acla-family__color-copy{block-size:auto;min-block-size:64px}
+    .acla-family[data-mobile-color-lines] .acla-family__color-name:has(.acla-family__mobile-name){display:block;min-block-size:0;-webkit-line-clamp:unset}
+    .acla-family[data-mobile-color-lines] .acla-family__original-name{display:none}
+    .acla-family[data-mobile-color-lines] .acla-family__mobile-name{display:block}
+    .acla-family__mobile-name-prefix{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .acla-family__mobile-name-color{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+    .acla-family[data-mobile-color-lines][data-view=list] .acla-family__color{flex-direction:column;align-items:stretch}
+    .acla-family[data-mobile-color-lines][data-view=list] .acla-family__swatch{flex-basis:auto;align-self:start}
+  }
+  @keyframes acla-family-search-pulse{0%,100%{opacity:0}50%{opacity:.32}}
   @keyframes acla-family-dialog-in{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
   @keyframes acla-family-backdrop-in{from{opacity:0}to{opacity:1}}
   @media(prefers-reduced-motion:reduce){.acla-family *,.acla-family *::before,.acla-family *::after,.acla-family__questions details::details-content{scroll-behavior:auto!important;transition:none!important;animation:none!important}.acla-family__cart-flight{display:none!important}.acla-family .acla-family__button:hover,.acla-family .acla-family__main-image:hover img,.acla-family .acla-family__color:hover .acla-family__swatch{transform:none}}
@@ -423,12 +483,30 @@
     connectedCallback() {
       if (this.controller) return;
       this.controller = new AbortController();
+      this.addEventListener('acla:scroll-checkpoint', () => this.scheduleAutoLoad(), { signal: this.controller.signal });
       this.items = [...this.querySelectorAll('[data-family-item]')];
+      this.catalog = JSON.parse(this.querySelector('[data-family-catalog]').textContent);
+      this.scaleSource = null;
+      this.scalable = Boolean(this.dataset.indexUrl);
+      this.catalogReady = this.scalable || this.catalog.length >= Number(this.dataset.optionCount || 0);
+      this.catalogRequest = null;
+      this.catalogFailed = false;
+      this.loadingMore = false;
+      this.autoLoadFrame = null;
+      this.pageSize = 24;
+      this.visibleLimit = this.pageSize;
+      this.rowCache = new Map(this.items.map(item => [item.dataset.productId, item]));
+      this.items.forEach(item => this.formatMobileItemName(item));
+      this.itemTemplate = this.items[0]?.cloneNode(true);
+      this.currentCartQuantities = null;
       this.strings = JSON.parse(this.querySelector('[data-family-strings]').textContent);
       this.formatter = new Intl.NumberFormat(this.dataset.locale || document.documentElement.lang || 'en', { style: 'currency', currency: this.dataset.currency || 'USD' });
       this.pending = false;
       this.uncertain = false;
       this.motion = matchMedia('(prefers-reduced-motion: reduce)');
+      this.searchDestination = new URL(location.href).searchParams.get('acla_item') || '';
+      this.searchHighlightId = '';
+      this.searchFocusPending = false;
       this.animations = new Set();
       this.flights = new Set();
       this.descriptionInert = new Set();
@@ -443,7 +521,18 @@
       this.addEventListener('input', event => {
         if (event.target.matches('[data-family-quantity]')) this.updateSummary();
       }, { signal: this.controller.signal });
-      this.querySelector('[data-family-search]')?.addEventListener('input', () => this.filterItems(), { signal: this.controller.signal });
+      this.querySelector('[data-family-search]')?.addEventListener('input', () => {
+        this.clearSearchDestination();
+        this.filterItems();
+      }, { signal: this.controller.signal });
+      window.addEventListener('popstate', () => {
+        this.searchDestination = new URL(location.href).searchParams.get('acla_item') || '';
+        if (this.searchDestination) this.revealSearchItem();
+        else this.setSearchHighlight('');
+      }, { signal: this.controller.signal });
+      document.addEventListener('input', event => {
+        if (event.target instanceof HTMLInputElement && event.target.closest('predictive-search-component')) this.clearSearchDestination();
+      }, { signal: this.controller.signal });
       document.addEventListener('shopify:cart:lines-update', event => {
         event.promise?.then(({ cart, detail }) => {
           if (detail?.source === this.id) return;
@@ -455,6 +544,17 @@
       this.querySelector('[data-image-dialog]')?.addEventListener('click', event => {
         if (event.target === event.currentTarget) event.currentTarget.close();
       }, { signal: this.controller.signal });
+      const thumbnailSlider = this.querySelector('[data-family-thumbnail-slider]');
+      if (thumbnailSlider) {
+        const syncThumbnail = slide => { slide.inert = slide.getAttribute('aria-hidden') === 'true'; };
+        thumbnailSlider.querySelectorAll('slideshow-slide').forEach(syncThumbnail);
+        this.thumbnailObserver = new MutationObserver(records => {
+          for (const record of records) {
+            if (record.target.matches('slideshow-slide')) syncThumbnail(record.target);
+          }
+        });
+        this.thumbnailObserver.observe(thumbnailSlider, { attributes: true, subtree: true, attributeFilter: ['aria-hidden'] });
+      }
       this.observer = new IntersectionObserver(entries => {
         for (const entry of entries) {
           if (!entry.isIntersecting) continue;
@@ -476,14 +576,41 @@
         });
       }, { threshold: .08 });
       this.querySelectorAll('.acla-family__section-heading,.acla-family__toolbar,.acla-family__questions,.acla-family__reviews,[data-family-item]').forEach(element => this.revealObserver.observe(element));
-      this.updateSummary();
+      if (this.catalogReady) this.updateFamilyPrice();
+      this.filterItems();
+      const grid = this.querySelector('[data-family-items]');
+      if (grid && !this.catalogReady && !this.scalable) {
+        this.catalogObserver = new IntersectionObserver(entries => {
+          if (!entries.some(entry => entry.isIntersecting)) return;
+          this.catalogObserver.disconnect();
+          this.ensureCatalog().catch(() => {});
+        }, { rootMargin: '200px' });
+        this.catalogObserver.observe(grid);
+      }
+      const more = this.querySelector('[data-family-more]');
+      if (more && !this.scalable) {
+        this.scrollObserver = new IntersectionObserver(entries => {
+          if (entries.some(entry => entry.isIntersecting)) this.scheduleAutoLoad();
+        }, { rootMargin: '0px 0px 320px 0px' });
+        this.scrollObserver.observe(more);
+      }
+      if (this.scalable && grid) this.initializeScale();
+      else if (this.searchDestination && grid) this.revealSearchItem();
     }
 
     disconnectedCallback() {
       this.controller?.abort();
+      this.scaleResizeObserver?.disconnect();
+      this.scaleSource?.cancel();
+      if (this.scaleFrame != null) cancelAnimationFrame(this.scaleFrame);
       this.observer?.disconnect();
       this.descriptionObserver?.disconnect();
+      this.thumbnailObserver?.disconnect();
       this.revealObserver?.disconnect();
+      this.catalogObserver?.disconnect();
+      this.scrollObserver?.disconnect();
+      if (this.autoLoadFrame !== null) cancelAnimationFrame(this.autoLoadFrame);
+      this.autoLoadFrame = null;
       this.animations?.forEach(animation => animation.cancel());
       this.flights?.forEach(flight => flight.remove());
       this.descriptionInert?.forEach(element => element.inert = false);
@@ -496,6 +623,75 @@
       this.animations.add(animation);
       animation.finished.then(() => this.animations.delete(animation), () => this.animations.delete(animation));
       return animation;
+    }
+    setSearchHighlight(productId) {
+      this.searchHighlightId = String(productId || '');
+      for (const item of this.rowCache.values()) {
+        const matches = item.dataset.productId === this.searchHighlightId;
+        item.classList.toggle('is-search-match', matches);
+        if (matches) item.setAttribute('aria-label', this.strings.search_match.replace('[product]', item.dataset.name));
+        else item.removeAttribute('aria-label');
+      }
+    }
+    clearSearchDestination() {
+      this.searchDestination = '';
+      this.searchFocusPending = false;
+      this.setSearchHighlight('');
+      const url = new URL(location.href);
+      if (url.searchParams.has('acla_item')) {
+        url.searchParams.delete('acla_item');
+        history.replaceState(history.state, '', url);
+      }
+    }
+    highlightSearchMatch(query, matches) {
+      if (!query) {
+        if (!this.searchDestination) this.setSearchHighlight('');
+        return;
+      }
+      const normalize = value => String(value || '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+      const exact = matches.find(item => [item.name, item.code, item.sku].some(value => normalize(value) === normalize(query)));
+      this.setSearchHighlight((exact || matches[0])?.productId);
+    }
+    finishSearchFocus() {
+      if (!this.searchFocusPending) return;
+      const item = [...this.rowCache.values()].find(row => row.isConnected && row.dataset.productId === this.searchHighlightId && row.dataset.loading !== 'true');
+      if (!item) return;
+      item.tabIndex = -1;
+      item.focus({ preventScroll: true });
+      this.searchFocusPending = false;
+    }
+    async revealSearchItem() {
+      const destination = this.searchDestination;
+      if (!/^\d+$/.test(destination) || !this.isConnected) return;
+      if (this.scalable && !this.scaleSource) return;
+      if (!this.scalable && !this.catalogReady) {
+        try { await this.ensureCatalog(); } catch { return; }
+      }
+      if (this.controller?.signal.aborted || destination !== this.searchDestination) return;
+      const entry = this.catalog.find(item => String(item.productId) === destination);
+      if (!entry) { this.setSearchHighlight(''); return; }
+      this.querySelector('[data-family-search]').value = '';
+      this.querySelector('[data-in-stock-only]').checked = false;
+      this.setSearchHighlight(destination);
+      this.searchFocusPending = true;
+      if (this.scalable) {
+        this.filterScale(false);
+        const index = this.scaleMatches.findIndex(item => String(item.productId) === destination);
+        const grid = this.querySelector('[data-family-items]');
+        const columns = this.dataset.view === 'list' ? 1 : getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).length;
+        const viewport = this.scaleViewport();
+        const tabs = this.querySelector('.acla-family__tabs');
+        const inset = Math.max(0, parseFloat(getComputedStyle(tabs).top) || 0) + tabs.offsetHeight + 20;
+        viewport.root.scrollTo({ top: viewport.root.scrollTop + grid.getBoundingClientRect().top - viewport.top + Math.floor(index / columns) * this.scaleRowHeight - inset, behavior: 'instant' });
+        this.scaleSignature = '';
+        this.renderScaleWindow();
+      } else {
+        this.visibleLimit = Math.max(this.visibleLimit, this.catalog.length);
+        this.filterItems(false);
+        const item = this.rowCache.get(destination);
+        item?.scrollIntoView({ block: 'center', behavior: 'instant' });
+      }
+      this.finishSearchFocus();
     }
     updateDescription(expanded = this.descriptionExpanded || false, animate = false) {
       const wrap = this.querySelector('[data-description-wrap]');
@@ -536,10 +732,10 @@
     }
     transitionItems(change) {
       const previous = new Map();
-      if (!this.motion.matches) this.items.filter(item => !item.hidden).forEach(item => previous.set(item, item.getBoundingClientRect()));
+      if (!this.motion.matches) this.items.filter(item => item.isConnected && !item.hidden).forEach(item => previous.set(item, item.getBoundingClientRect()));
       change();
       if (this.motion.matches) return;
-      this.items.filter(item => !item.hidden).forEach(item => {
+      this.items.filter(item => item.isConnected && !item.hidden).forEach(item => {
         const next = item.getBoundingClientRect();
         if (next.bottom < 0 || next.top > innerHeight) return;
         const before = previous.get(item);
@@ -550,7 +746,8 @@
     cartMotion(item, origin) {
       const swatch = item.querySelector('.acla-family__swatch').getBoundingClientRect();
       const source = swatch.bottom > 0 && swatch.top < innerHeight && !item.hidden ? swatch : origin?.getBoundingClientRect();
-      return { source, image: item.dataset.image, color: getComputedStyle(item).getPropertyValue('--family-swatch') };
+      const thumbnail = item.querySelector('.acla-family__swatch img');
+      return { source, image: thumbnail?.currentSrc || thumbnail?.src };
     }
     animateCart(entries) {
       if (this.motion.matches || !this.isConnected || !entries.length) return;
@@ -598,6 +795,181 @@
       });
     }
 
+    async initializeScale() {
+      if (this.scaleStarting) return;
+      this.scaleStarting = true;
+      const retry = this.querySelector('[data-retry-options]');
+      retry.hidden = true;
+      try {
+        await this.startScale();
+      } catch (error) {
+        if (this.controller?.signal.aborted || !this.isConnected) return;
+        this.querySelector('[data-result-count]').textContent = this.strings.load_error;
+        this.querySelector('[data-family-more]').hidden = false;
+        retry.hidden = false;
+      } finally {
+        this.scaleStarting = false;
+      }
+    }
+    async startScale() {
+      const controller = this.controller;
+      const { FamilyCatalogSource, visibleRows, loadCollectionIndex } = await import(this.dataset.scaleModule);
+      const index = await loadCollectionIndex(this.dataset.indexUrl, controller.signal);
+      if (controller.signal.aborted) return;
+      this.scaleVisibleRows = visibleRows;
+      this.scaleSource = new FamilyCatalogSource(index, this.catalog, this.dataset.recordsUrl, controller.signal, new URL(location.href).searchParams.get('catalog_test') === 'off' ? 0 : Number(this.dataset.scaleTestCount || 0));
+      this.performanceTest = this.scaleSource.testMode;
+      this.catalog = this.scaleSource.entries;
+      this.dispatchEvent(new CustomEvent('acla:family-prices-ready', { bubbles: true, detail: { indexUrl: this.dataset.indexUrl } }));
+      this.updateFamilyPrice();
+      this.scaleFrame = null;
+      this.scaleRevision = 0;
+      this.scaleDataRevision = 0;
+      this.scaleRowHeight = 0;
+      this.scaleSignature = '';
+      this.dataset.virtualized = 'true';
+      this.querySelector('[data-family-more]').hidden = true;
+      if (this.performanceTest) {
+        const note = document.createElement('p');
+        note.className = 'acla-family__performance-note';
+        note.dataset.performanceNotice = '';
+        note.textContent = this.strings.performance_test.replace('[count]', this.catalog.length).replace('[real]', this.scaleSource.realCount);
+        this.querySelector('.acla-family__toolbar').before(note);
+      }
+      document.addEventListener('scroll', () => this.scheduleScaleWindow(), { capture: true, passive: true, signal: controller.signal });
+      window.addEventListener('resize', () => { this.scaleRowHeight = 0; this.scaleSignature = ''; this.scheduleScaleWindow(); }, { signal: controller.signal });
+      this.querySelector('[data-family-items]').addEventListener('focusin', () => { this.scaleSignature = ''; this.scheduleScaleWindow(); }, { signal: controller.signal });
+      let lastWidth = 0;
+      this.scaleResizeObserver = new ResizeObserver(entries => {
+        const width = entries[0]?.contentRect.width;
+        if (width && width !== lastWidth) { lastWidth = width; this.scaleRowHeight = 0; this.scaleSignature = ''; this.scheduleScaleWindow(); }
+      });
+      this.scaleResizeObserver.observe(this.querySelector('[data-family-items]'));
+      this.filterScale();
+      if (this.searchDestination) this.revealSearchItem();
+    }
+    filterScale(reset = true) {
+      if (!this.scaleSource) return;
+      const normalize = value => value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+      const query = normalize(this.querySelector('[data-family-search]').value.trim());
+      const stockOnly = this.querySelector('[data-in-stock-only]').checked;
+      const order = this.querySelector('[data-family-sort]').value;
+      const stock = entry => {
+        const current = this.scaleSource.records.get(entry.productId) || entry;
+        const quantity = this.currentCartQuantities?.get(current.variantId) ?? current.cartQuantity ?? 0;
+        return current.available === 'true' && (current.stock === null || current.stock > quantity);
+      };
+      this.scaleMatches = this.catalog.filter(entry => normalize(entry.search).includes(query) && (!stockOnly || stock(entry))).sort((a, b) => {
+        if (order === 'name') return a.name.localeCompare(b.name, this.dataset.locale);
+        if (order === 'price_asc') return a.price - b.price;
+        if (order === 'price_desc') return b.price - a.price;
+        return a.position - b.position;
+      });
+      this.highlightSearchMatch(query, this.scaleMatches);
+      this.scaleRevision++;
+      this.scaleSignature = '';
+      this.querySelector('[data-result-count]').textContent = this.strings.total_options.replace('[count]', this.scaleMatches.length);
+      this.querySelector('[data-empty-results]').hidden = this.scaleMatches.length > 0;
+      if (reset) {
+        const grid = this.querySelector('[data-family-items]');
+        if (grid.getBoundingClientRect().top < 0) grid.scrollIntoView({ block: 'start', behavior: 'instant' });
+      }
+      this.renderScaleWindow();
+    }
+    scheduleScaleWindow() {
+      if (this.scaleFrame != null || !this.isConnected || !this.scaleSource) return;
+      this.scaleFrame = requestAnimationFrame(() => { this.scaleFrame = null; this.renderScaleWindow(); });
+    }
+    scaleViewport() {
+      let node = this.querySelector('[data-family-items]').parentElement;
+      while (node && node !== document.body && node !== document.documentElement) {
+        if (/(auto|scroll)/.test(getComputedStyle(node).overflowY) && node.scrollHeight > node.clientHeight && node.clientHeight > 0) {
+          return { root: node, top: node.getBoundingClientRect().top, height: node.clientHeight };
+        }
+        node = node.parentElement;
+      }
+      return { root: document.scrollingElement, top: 0, height: innerHeight };
+    }
+    renderScaleWindow() {
+      if (!this.isConnected || !this.scaleMatches) return;
+      const grid = this.querySelector('[data-family-items]');
+      const columns = this.dataset.view === 'list' ? 1 : getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).length;
+      if (!this.scaleRowHeight) {
+        this.style.removeProperty('--family-virtual-row-height');
+        const measured = [...grid.querySelectorAll('[data-family-item]')].map(row => row.getBoundingClientRect().height);
+        const natural = measured.length ? Math.max(...measured) : this.dataset.view === 'list' ? 100 : 250;
+        this.scaleRowHeight = Math.ceil(natural);
+        this.style.setProperty('--family-virtual-row-height', this.scaleRowHeight + 'px');
+      }
+      const activeRow = document.activeElement?.closest('[data-family-item]');
+      const focusedIndex = activeRow && this.contains(activeRow) ? this.scaleMatches.findIndex(entry => entry.key === (activeRow.dataset.key || activeRow.dataset.productId)) : -1;
+      const viewport = this.scaleViewport();
+      const rows = this.scaleVisibleRows(this.scaleMatches.length, columns, this.scaleRowHeight, grid.getBoundingClientRect().top - viewport.top, viewport.height, focusedIndex);
+      const signature = [this.scaleRevision, this.scaleDataRevision, columns, this.scaleRowHeight, ...rows].join(':');
+      if (signature === this.scaleSignature) return;
+      this.scaleSignature = signature;
+      const wanted = [];
+      const nodes = [];
+      const spacer = count => {
+        if (count < 1) return;
+        const node = document.createElement('li');
+        node.className = 'acla-family__virtual-spacer';
+        node.setAttribute('aria-hidden', 'true');
+        node.style.blockSize = count * this.scaleRowHeight + 'px';
+        nodes.push(node);
+      };
+      let previous = -1;
+      for (const rowIndex of rows) {
+        spacer(rowIndex - previous - 1);
+        for (let index = rowIndex * columns; index < Math.min((rowIndex + 1) * columns, this.scaleMatches.length); index++) {
+          const entry = this.scaleMatches[index];
+          wanted.push(entry);
+          const data = this.scaleSource.details(entry) || { ...entry, loading: true, variantId: '', ruleMin: 1, ruleIncrement: 1, ruleMax: null, cartQuantity: 0, stock: null, available: 'false', image: '', imageAlt: entry.name, url: '/products/' + entry.handle, thumbnailHtml: '', defaultVariant: true };
+          const node = this.createRow(data);
+          node.setAttribute('aria-setsize', String(this.scaleMatches.length));
+          node.setAttribute('aria-posinset', String(index + 1));
+          node.querySelector('.acla-family__color-name').title = entry.name;
+          if (data.loading) node.querySelector('[data-availability]').textContent = this.strings.loading_options;
+          nodes.push(node);
+        }
+        previous = rowIndex;
+      }
+      spacer(Math.ceil(this.scaleMatches.length / columns) - previous - 1);
+      const keep = new Set(nodes);
+      for (const node of [...grid.children]) if (!keep.has(node)) node.remove();
+      let next = grid.firstElementChild;
+      for (const node of nodes) {
+        if (node === next) next = next.nextElementSibling;
+        else grid.insertBefore(node, next);
+      }
+      for (const [key, node] of this.rowCache) {
+        if (!keep.has(node) && this.quantity(node) === 0 && node !== this.activeItem && !node.contains(document.activeElement)) this.rowCache.delete(key);
+      }
+      this.items = [...this.rowCache.values()];
+      this.setSearchHighlight(this.searchHighlightId);
+      this.finishSearchFocus();
+      this.updateSummary();
+      const revision = this.scaleRevision;
+      const requestSignature = this.scaleSignature;
+      this.scaleSource.load(wanted).then(errors => {
+        if (!this.isConnected || this.controller?.signal.aborted || revision !== this.scaleRevision || requestSignature !== this.scaleSignature) return;
+        if (!errors.length) {
+          this.querySelector('[data-family-more]').hidden = true;
+          const status = this.querySelector('[data-result-count]');
+          const label = this.strings.total_options.replace('[count]', this.scaleMatches.length);
+          if (status.textContent !== label) status.textContent = label;
+        }
+        const changed = wanted.some(entry => this.rowCache.get(entry.key)?.dataset.loading === 'true' && this.scaleSource.details(entry));
+        if (changed) { this.scaleDataRevision++; this.scaleSignature = ''; this.scheduleScaleWindow(); }
+        if (errors.length) {
+          const more = this.querySelector('[data-family-more]');
+          more.hidden = false;
+          this.querySelector('[data-retry-options]').hidden = false;
+          this.querySelector('[data-result-count]').textContent = this.strings.load_error;
+        }
+      });
+    }
+
     money(cents) { return this.formatter.format(Number(cents) / 100); }
     quantity(item) { return Number(item.querySelector('[data-family-quantity]').value) || 0; }
     maximum(item) {
@@ -631,6 +1003,13 @@
       const button = event.target.closest('button');
       if (!button || !this.contains(button)) return;
       const item = button.closest('[data-family-item]');
+      if (button.hasAttribute('data-retry-options')) {
+        if (this.scalable) {
+          if (!this.scaleSource) this.initializeScale();
+          else { this.querySelector('[data-family-more]').hidden = true; this.scaleSignature = ''; this.scheduleScaleWindow(); }
+        }
+        else this.loadMore();
+      }
       if (button.hasAttribute('data-description-toggle')) this.updateDescription(!this.descriptionExpanded, true);
       if (button.hasAttribute('data-select-color')) this.selectColor(item);
       if (button.hasAttribute('data-quantity-step')) {
@@ -643,10 +1022,12 @@
         this.setQuantity(item, next);
       }
       if (button.hasAttribute('data-family-view')) {
+        if (this.scalable) { this.scaleRowHeight = 0; this.scaleSignature = ''; requestAnimationFrame(() => this.scheduleScaleWindow()); }
         this.transitionItems(() => this.dataset.view = button.dataset.familyView);
         this.querySelectorAll('[data-family-view]').forEach(control => control.setAttribute('aria-pressed', String(control === button)));
       }
       if (button.hasAttribute('data-clear-filters')) {
+        this.clearSearchDestination();
         this.querySelector('[data-family-search]').value = '';
         this.querySelector('[data-in-stock-only]').checked = false;
         this.filterItems();
@@ -695,8 +1076,13 @@
       panel.querySelector('[data-selected-name]').textContent = item.dataset.name;
       panel.querySelector('[data-selected-sku]').textContent = item.dataset.sku;
       panel.querySelector('[data-selected-price]').textContent = this.money(item.dataset.price);
+      const msrp = panel.querySelector('[data-selected-msrp]');
+      msrp.textContent = Number(item.dataset.comparePrice) > 0 ? this.money(item.dataset.comparePrice) : this.strings.msrp_not_listed;
+      msrp.classList.toggle('is-discounted', Number(item.dataset.comparePrice) > Number(item.dataset.price));
       panel.querySelector('[data-selected-link]').href = item.dataset.url;
-      panel.querySelector('acla-cart-status')?.setAttribute('data-cart-product-ids', JSON.stringify([item.dataset.productId]));
+      const badge = panel.querySelector('acla-cart-status');
+      badge?.removeAttribute('data-cart-family-id');
+      badge?.setAttribute('data-cart-product-ids', JSON.stringify([item.dataset.productId]));
       const image = panel.querySelector('[data-selected-image]');
       image.hidden = !item.dataset.image;
       if (item.dataset.image) image.src = item.dataset.image;
@@ -706,30 +1092,240 @@
       this.updateSummary();
       panel.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'center' });
     }
-    filterItems() {
+    async ensureCatalog() {
+      if (this.catalogReady) return;
+      if (this.catalogRequest) return this.catalogRequest;
+      const controller = this.controller;
+      const button = this.querySelector('[data-retry-options]');
+      button.disabled = true;
+      button.hidden = true;
+      this.querySelector('[data-scroll-status]').hidden = false;
+      this.catalogFailed = false;
+      this.querySelector('[data-result-count]').textContent = this.strings.loading_options;
+      const request = (async () => {
+        try {
+          const response = await fetch(this.dataset.catalogUrl, { signal: controller.signal });
+          if (!response.ok) throw new Error(this.strings.load_error);
+          const html = new DOMParser().parseFromString(await response.text(), 'text/html');
+          const source = html.querySelector('[data-family-catalog]');
+          if (source?.dataset.familyProductId !== this.dataset.productId) throw new Error(this.strings.load_error);
+          const catalog = JSON.parse(source.textContent);
+          if (!Array.isArray(catalog) || !catalog.every(data => data.productId && data.variantId && Number.isFinite(data.price))) throw new Error(this.strings.load_error);
+          if (controller.signal.aborted) return;
+          this.catalog = catalog;
+          this.catalogReady = true;
+          this.dataset.optionCount = String(catalog.length);
+          this.updateFamilyPrice();
+          this.filterItems(false);
+        } catch (error) {
+          if (!controller.signal.aborted) {
+            this.catalogFailed = true;
+            this.querySelector('[data-result-count]').textContent = this.strings.load_error;
+          }
+          throw error;
+        } finally {
+          if (this.controller === controller) {
+            this.catalogRequest = null;
+            button.disabled = false;
+            button.hidden = !this.catalogFailed;
+            this.querySelector('[data-scroll-status]').hidden = true;
+            if (this.catalogReady) this.filterItems(false);
+          }
+        }
+      })();
+      this.catalogRequest = request;
+      return request;
+    }
+    nearOptionsEnd() {
+      const more = this.querySelector('[data-family-more]');
+      if (!more || more.hidden) return false;
+      const bounds = more.getBoundingClientRect();
+      return bounds.top <= innerHeight + 320 && bounds.bottom >= 0;
+    }
+    scheduleAutoLoad() {
+      if (this.scalable) return;
+      if (this.autoLoadFrame !== null || this.loadingMore || this.catalogFailed || !this.isConnected) return;
+      this.autoLoadFrame = requestAnimationFrame(() => {
+        this.autoLoadFrame = null;
+        if (!this.catalogFailed && this.nearOptionsEnd()) this.loadMore(true);
+      });
+    }
+    async loadMore(automatic = false) {
+      if (this.loadingMore || automatic && this.catalogFailed) return;
+      const controller = this.controller;
+      this.loadingMore = true;
+      try {
+        await this.ensureCatalog();
+        if (controller.signal.aborted || !this.isConnected || automatic && !this.nearOptionsEnd()) return;
+        this.visibleLimit += this.pageSize;
+        this.filterItems(false);
+      } catch {
+        return;
+      } finally {
+        if (this.controller === controller) {
+          this.loadingMore = false;
+          this.scheduleAutoLoad();
+        }
+      }
+    }
+    updateFamilyPrice() {
+      if (!this.catalog.length) return;
+      const prices = this.catalog.map(data => data.price);
+      const minimum = Math.min(...prices);
+      this.querySelector('[data-family-price]').textContent = this.money(minimum);
+      this.querySelector('[data-family-price-from]').hidden = minimum === Math.max(...prices);
+      const listPrices = this.catalog.map(data => Number(data.comparePrice)).filter(value => Number.isFinite(value) && value > 0);
+      const listLabel = this.querySelector('[data-family-msrp-value]');
+      if (listPrices.length) {
+        const listMinimum = listPrices.reduce((value, price) => Math.min(value, price), Infinity);
+        const listMaximum = listPrices.reduce((value, price) => Math.max(value, price), 0);
+        listLabel.textContent = listMinimum === listMaximum ? this.money(listMinimum) : `${this.money(listMinimum)} – ${this.money(listMaximum)}`;
+      } else listLabel.textContent = this.strings.msrp_not_listed;
+      this.querySelector('[data-family-msrp]').hidden = false;
+    }
+    formatMobileItemName(item) {
+      if (!this.hasAttribute('data-mobile-color-lines')) return;
+      const name = item.querySelector('.acla-family__color-name');
+      if (!name) return;
+      let title = (item.dataset.search || item.dataset.name || '').trim();
+      const sku = item.dataset.sku?.trim();
+      if (sku && title.endsWith(' ' + sku)) title = title.slice(0, -sku.length).trim();
+      const parts = title.match(/^(OLO\s+(?:Premium\s+)?Markers\s*(?:-\s*)?Brush|Copic\s+Ciao)\s*(?:-\s*)?(?:(?:Color|Size):\s*)?(.+)$/i);
+      if (!parts) return;
+      const original = document.createElement('span');
+      original.className = 'acla-family__original-name';
+      original.textContent = item.dataset.name;
+      const mobile = document.createElement('span');
+      mobile.className = 'acla-family__mobile-name';
+      const prefix = document.createElement('span');
+      prefix.className = 'acla-family__mobile-name-prefix';
+      prefix.textContent = parts[1].replace(/\bPremium\s*/i, '').replace(/\s*-\s*/g, ' ').replace(/\s+/g, ' ').trim();
+      const color = document.createElement('span');
+      color.className = 'acla-family__mobile-name-color';
+      color.textContent = parts[2].trim();
+      mobile.append(prefix, color);
+      name.replaceChildren(original, mobile);
+    }
+    createRow(data) {
+      const rowKey = data.key || data.productId;
+      const cached = this.rowCache.get(rowKey);
+      if (cached && (cached.dataset.loading !== 'true' || data.loading)) return cached;
+      const row = this.itemTemplate.cloneNode(true);
+      row.dataset.key = rowKey;
+      row.dataset.loading = String(Boolean(data.loading));
+      row.classList.toggle('is-loading', Boolean(data.loading));
+      const fields = ['productId', 'variantId', 'name', 'code', 'sku', 'search', 'price', 'comparePrice', 'position', 'available', 'ruleMin', 'ruleIncrement', 'ruleMax', 'image', 'imageAlt', 'url'];
+      for (const key of fields) row.dataset[key] = data[key] ?? '';
+      row.dataset.cartQuantity = this.currentCartQuantities?.get(data.variantId) ?? data.cartQuantity;
+      if (data.stock === null) delete row.dataset.stock;
+      else row.dataset.stock = data.stock;
+      row.classList.remove('is-selected', 'is-in-cart');
+      row.classList.toggle('is-search-match', data.productId === this.searchHighlightId);
+      const swatch = row.querySelector('.acla-family__swatch');
+      const thumbnail = document.createElement('template');
+      thumbnail.innerHTML = data.thumbnailHtml;
+      for (const child of [...swatch.children]) if (!child.classList.contains('acla-family__selected-mark')) child.remove();
+      swatch.prepend(thumbnail.content);
+      const color = row.querySelector('[data-select-color]');
+      color.disabled = Boolean(data.loading);
+      color.setAttribute('aria-pressed', 'false');
+      color.setAttribute('aria-label', this.strings.preview_color.replace('[color]', data.name));
+      let code = row.querySelector('.acla-family__color-code');
+      if (!code) {
+        code = document.createElement('span');
+        code.className = 'acla-family__color-code';
+        row.querySelector('.acla-family__color-copy').prepend(code);
+      }
+      code.textContent = data.code || '';
+      row.querySelector('.acla-family__color-name').textContent = data.name;
+      this.formatMobileItemName(row);
+      const sku = row.querySelector('.acla-family__item-sku');
+      sku.lastChild.textContent = ' ' + (data.sku || '');
+      const price = row.querySelector('.acla-family__item-price');
+      price.querySelector('strong').textContent = this.money(data.price);
+      const msrp = price.querySelector('[data-item-msrp]');
+      msrp.textContent = Number(data.comparePrice) > 0 ? this.money(data.comparePrice) : this.strings.msrp_not_listed;
+      msrp.classList.toggle('is-discounted', Number(data.comparePrice) > Number(data.price));
+      const savingsLabel = row.querySelector('[data-item-savings]');
+      const referencePrice = Math.max(Number(data.price), Number(data.comparePrice) || 0);
+      const checkoutRate = Math.max(0, Math.min(100, Number(data.checkoutRate) || 0));
+      const finalPrice = Math.round(Number(data.price) * (100 - checkoutRate) / 100);
+      const savings = referencePrice > 0 ? Math.max(0, Math.min(100, Math.round((referencePrice - finalPrice) * 100 / referencePrice))) : 0;
+      savingsLabel.hidden = Boolean(data.loading) || savings <= 0;
+      savingsLabel.textContent = this.strings.item_savings.replace('[percent]', savings);
+      if (Number(data.checkoutRate) > 0) savingsLabel.title = this.strings.checkout_savings_note;
+      else savingsLabel.removeAttribute('title');
+      const stock = row.querySelector('[data-availability]');
+      stock.textContent = data.available === 'true' ? this.strings.in_stock : data.defaultVariant ? this.strings.sold_out : this.strings.view_options;
+      stock.classList.toggle('acla-family__availability--unavailable', data.available !== 'true');
+      const input = row.querySelector('[data-family-quantity]');
+      input.id = `FamilyQuantity-${this.dataset.sectionId}-${rowKey}`;
+      input.value = '0';
+      input.setAttribute('aria-label', this.strings.quantity_color.replace('[color]', data.name));
+      row.querySelector('[data-quantity-step="-1"]').setAttribute('aria-label', this.strings.decrease_color.replace('[color]', data.name));
+      row.querySelector('[data-quantity-step="1"]').setAttribute('aria-label', this.strings.increase_color.replace('[color]', data.name));
+      row.querySelector('.acla-family__item-link').href = data.url;
+      row.querySelector('acla-cart-status').setAttribute('data-cart-product-ids', JSON.stringify([data.productId]));
+      this.rowCache.set(rowKey, row);
+      this.items.push(row);
+      return row;
+    }
+    filterItems(reset = true) {
+      if (this.scalable) {
+        if (this.scaleSource) this.filterScale(reset);
+        else this.updateSummary();
+        return;
+      }
+      if (!this.querySelector('[data-family-items]')) return;
+      if (reset) this.visibleLimit = this.pageSize;
       const normalize = value => value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
       const query = normalize(this.querySelector('[data-family-search]')?.value.trim() || '');
       const onlyStock = this.querySelector('[data-in-stock-only]')?.checked;
-      let shown = 0;
-      this.transitionItems(() => this.items.forEach(item => {
-        const available = item.dataset.available === 'true' && this.maximum(item) >= Number(item.dataset.ruleMin || 1);
-        const visible = normalize(item.dataset.search).includes(query) && (!onlyStock || available);
-        item.hidden = !visible;
-        if (visible) shown++;
-      }));
-      const count = this.querySelector('[data-result-count]');
-      if (count) count.textContent = this.strings.results.replace('[shown]', shown).replace('[total]', this.items.length);
-      const empty = this.querySelector('[data-empty-results]');
-      if (empty) empty.hidden = shown > 0;
-    }
-    sortItems(order) {
-      const sorted = [...this.items].sort((a, b) => {
-        if (order === 'name') return a.dataset.name.localeCompare(b.dataset.name, this.dataset.locale);
-        if (order === 'price_asc') return Number(a.dataset.price) - Number(b.dataset.price);
-        if (order === 'price_desc') return Number(b.dataset.price) - Number(a.dataset.price);
-        return Number(a.dataset.position) - Number(b.dataset.position);
+      const order = this.querySelector('[data-family-sort]')?.value || 'position';
+      if (!this.catalogReady && (query || onlyStock || order !== 'position')) {
+        this.ensureCatalog().catch(() => {});
+        return;
+      }
+      const matches = this.catalog.filter(data => {
+        let maximum = data.ruleMax ?? Infinity;
+        const inCart = this.currentCartQuantities?.get(data.variantId) ?? data.cartQuantity;
+        if (data.stock !== null) maximum = Math.min(maximum, Math.max(0, data.stock - inCart));
+        const available = data.available === 'true' && maximum >= data.ruleMin;
+        return normalize(data.search).includes(query) && (!onlyStock || available);
+      }).sort((a, b) => {
+        if (order === 'name') return a.name.localeCompare(b.name, this.dataset.locale);
+        if (order === 'price_asc') return a.price - b.price;
+        if (order === 'price_desc') return b.price - a.price;
+        return a.position - b.position;
       });
-      this.transitionItems(() => this.querySelector('[data-family-items]').append(...sorted));
+      const visible = matches.slice(0, this.visibleLimit);
+      this.highlightSearchMatch(query, matches);
+      this.transitionItems(() => {
+        const grid = this.querySelector('[data-family-items]');
+        const rows = visible.map(data => this.createRow(data));
+        const keep = new Set(rows);
+        for (const row of [...grid.children]) if (!keep.has(row)) row.remove();
+        let next = grid.firstElementChild;
+        for (const row of rows) {
+          if (row === next) next = next.nextElementSibling;
+          else grid.insertBefore(row, next);
+        }
+      });
+      const count = this.querySelector('[data-result-count]');
+      if (count && !this.catalogRequest && !this.catalogFailed) count.textContent = this.strings.results.replace('[shown]', visible.length).replace('[total]', this.catalogReady ? matches.length : this.dataset.optionCount);
+      const empty = this.querySelector('[data-empty-results]');
+      if (empty) empty.hidden = matches.length > 0;
+      const more = this.querySelector('[data-family-more]');
+      const finished = this.catalogReady && visible.length >= matches.length;
+      if (finished && more.contains(document.activeElement)) this.querySelector('[data-result-count]')?.focus({ preventScroll: true });
+      more.hidden = finished;
+      this.updateSummary();
+      this.scheduleAutoLoad();
+      this.setSearchHighlight(this.searchHighlightId);
+      this.finishSearchFocus();
+    }
+    sortItems() {
+      this.filterItems();
     }
     updateSummary() {
       let count = 0;
@@ -762,13 +1358,14 @@
       this.querySelector('[data-selected-total]').textContent = this.money(total);
       this.querySelector('[data-clear-selection]').disabled = this.pending || count === 0;
       const add = this.querySelector('[data-add-selected]');
-      add.disabled = this.pending || count === 0 || invalid || this.uncertain;
+      add.disabled = this.pending || count === 0 || invalid || this.uncertain || this.performanceTest;
+      if (this.performanceTest) add.title = this.strings.test_cart_disabled;
       add.textContent = this.pending ? this.strings.adding : this.strings.add_selected;
       if (this.activeItem) {
         const maximum = this.maximum(this.activeItem);
         const available = this.activeItem.dataset.available === 'true' && maximum >= Number(this.activeItem.dataset.ruleMin || 1);
         const single = this.querySelector('[data-add-single]');
-        single.disabled = this.pending || !available || this.uncertain;
+        single.disabled = this.pending || !available || this.uncertain || this.performanceTest;
         single.textContent = this.pending ? this.strings.adding : this.strings.add_to_cart;
         const input = this.querySelector('[data-selected-quantity]');
         input.disabled = this.pending || !available || this.uncertain;
@@ -806,16 +1403,16 @@
     }
     syncCart(cart) {
       const quantities = this.cartQuantities(cart);
+      this.currentCartQuantities = quantities;
       this.items.forEach(item => {
         item.dataset.cartQuantity = quantities.get(item.dataset.variantId) || 0;
         const input = item.querySelector('[data-family-quantity]');
         input.value = this.normalize(item, Number(input.value));
       });
-      this.updateSummary();
-      this.filterItems();
+      this.filterItems(false);
     }
     async addItems(entries, origin) {
-      if (this.pending || this.uncertain || entries.length === 0) return;
+      if (this.performanceTest || this.pending || this.uncertain || entries.length === 0) return;
       const invalid = entries.some(({ item, quantity }) => !Number.isInteger(quantity) || this.normalize(item, quantity) !== quantity);
       if (invalid) return this.feedback(this.strings.quantity_error, true);
       const motion = new Map(entries.map(({ item }) => [item, this.cartMotion(item, origin)]));
@@ -893,22 +1490,107 @@
   "name": "t:acla_family.section_name",
   "tag": "section",
   "class": "acla-product-family-section",
-  "enabled_on": { "templates": ["product"] },
+  "enabled_on": {
+    "templates": [
+      "product"
+    ]
+  },
   "settings": [
-    { "type": "paragraph", "content": "t:acla_family.setup_help" },
-    { "type": "product_list", "id": "products", "label": "t:acla_family.products_label", "limit": 50, "info": "t:acla_family.products_help" },
-    { "type": "color", "id": "accent_color", "label": "t:acla_family.accent_label", "default": "#006b45" },
-    { "type": "select", "id": "default_view", "label": "t:acla_family.default_view_label", "options": [{ "value": "grid", "label": "t:acla_family.grid_label" }, { "value": "list", "label": "t:acla_family.list_label" }], "default": "grid" },
-    { "type": "range", "id": "padding_top", "label": "t:acla_family.padding_top_label", "min": 0, "max": 100, "step": 4, "unit": "px", "default": 32 },
-    { "type": "range", "id": "padding_bottom", "label": "t:acla_family.padding_bottom_label", "min": 0, "max": 100, "step": 4, "unit": "px", "default": 48 }
+    {
+      "type": "paragraph",
+      "content": "t:acla_family.setup_help"
+    },
+    {
+      "type": "product_list",
+      "id": "products",
+      "label": "t:acla_family.products_label",
+      "limit": 50,
+      "info": "t:acla_family.products_help"
+    },
+    {
+      "type": "color",
+      "id": "accent_color",
+      "label": "t:acla_family.accent_label",
+      "default": "#006b45"
+    },
+    {
+      "type": "select",
+      "id": "default_view",
+      "label": "t:acla_family.default_view_label",
+      "options": [
+        {
+          "value": "grid",
+          "label": "t:acla_family.grid_label"
+        },
+        {
+          "value": "list",
+          "label": "t:acla_family.list_label"
+        }
+      ],
+      "default": "grid"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "t:acla_family.padding_top_label",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "default": 32
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "t:acla_family.padding_bottom_label",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "default": 48
+    },
+    {
+      "type": "header",
+      "content": "t:acla_family.performance_header"
+    },
+    {
+      "type": "product",
+      "id": "performance_test_product",
+      "label": "t:acla_family.performance_product"
+    },
+    {
+      "type": "number",
+      "id": "performance_test_count",
+      "label": "t:acla_family.performance_count",
+      "default": 0,
+      "info": "t:acla_family.performance_info"
+    }
   ],
   "blocks": [
-    { "type": "@app" },
-    { "type": "question", "name": "t:acla_family.question_block", "settings": [
-      { "type": "text", "id": "question", "label": "t:acla_family.question_label" },
-      { "type": "richtext", "id": "answer", "label": "t:acla_family.answer_label" }
-    ] }
+    {
+      "type": "@app"
+    },
+    {
+      "type": "question",
+      "name": "t:acla_family.question_block",
+      "settings": [
+        {
+          "type": "text",
+          "id": "question",
+          "label": "t:acla_family.question_label"
+        },
+        {
+          "type": "richtext",
+          "id": "answer",
+          "label": "t:acla_family.answer_label"
+        }
+      ]
+    }
   ],
-  "presets": [{ "name": "t:acla_family.section_name" }]
+  "presets": [
+    {
+      "name": "t:acla_family.section_name"
+    }
+  ]
 }
 {% endschema %}

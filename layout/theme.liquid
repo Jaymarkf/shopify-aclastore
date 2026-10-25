@@ -170,6 +170,10 @@
 
     {% render 'search-modal' %}
 
+    {% if request.page_type == 'product' and settings.product_scroll_enabled %}
+      {% render 'acla-product-scroll' %}
+    {% endif %}
+
     {% if settings.quick_add or settings.mobile_quick_add %}
       {% render 'quick-add-modal' %}
     {% endif %}

@@ -9,6 +9,11 @@
   @param {number} [product_card_gap] - The gap between the product card children (overrides block settings)
   @param {string} [product_view_context] - The context in which the product card is being rendered. Used for standard events.
 {%- enddoc -%}
+{% capture group_count %}{% render 'acla-group-count', product_resource: product %}{% endcapture %}
+{% assign group_count = group_count | plus: 0 %}
+{% if product == blank or group_count > 0 or product_view_context == 'search' %}
+{% capture card_url %}{% if product_view_context == 'search' %}{% render 'acla-search-product-url', product_resource: product %}{% else %}{{ product.url }}{% endif %}{% endcapture %}
+
 
 {% assign block_settings = block.settings %}
 
@@ -81,7 +86,7 @@
     id="{{ product_card_id | md5 }}"
     {% unless onboarding %}
       {% # Link to product.url so algorithmic variant relevance and tracking params are maintained. %}
-      href="{{ product.url }}"
+      href="{{ card_url | escape }}"
     {% endunless %}
     class="product-card__link"
     ref="productCardLink"
@@ -117,4 +122,6 @@
   <div class="acla-card-cart-status">{% render 'acla-cart-status', product_resource: product %}</div>
 </product-card>
 
+
+{% endif %}
 {% render 'product-card-styles' %}

@@ -4,6 +4,8 @@ import { StandardEvents } from '@shopify/events';
 const seed = document.querySelector('[data-acla-cart-snapshot]');
 const indicators = new Set();
 let quantities = new Map();
+let memberships = [];
+let familyQuantities = new Map();
 let revision = 0;
 let pendingUpdates = 0;
 let refreshController;
@@ -16,6 +18,14 @@ function applyCart(cart) {
   for (const item of cart.items) {
     const productId = String(item.product_id);
     quantities.set(productId, (quantities.get(productId) || 0) + Number(item.quantity || 0));
+  }
+  familyQuantities = new Map();
+  const seen = new Set();
+  for (const [productId, familyId] of memberships) {
+    const key = `${productId}:${familyId}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    familyQuantities.set(familyId, (familyQuantities.get(familyId) || 0) + (quantities.get(productId) || 0));
   }
   indicators.forEach(indicator => indicator.renderQuantity());
   document.dispatchEvent(new CustomEvent('acla:cart-snapshot', { detail: { cart } }));
@@ -31,6 +41,18 @@ async function refreshCart() {
     const response = await fetch(seed.dataset.cartUrl, { headers: { Accept: 'application/json' }, cache: 'no-store', signal: controller.signal });
     if (!response.ok) return;
     const cart = await response.json();
+    if (seed.dataset.familyUrl && cart.items?.length) {
+      try {
+        const familyResponse = await fetch(seed.dataset.familyUrl, { cache: 'no-store', signal: controller.signal });
+        if (familyResponse.ok) {
+          const html = new DOMParser().parseFromString(await familyResponse.text(), 'text/html');
+          const value = JSON.parse(html.querySelector('[data-family-memberships]')?.textContent || 'null');
+          if (Array.isArray(value) && !controller.signal.aborted && requestRevision === revision) memberships = value;
+        }
+      } catch {
+        // A group lookup failure must not block the current per-product cart quantities.
+      }
+    }
     if (!controller.signal.aborted && requestRevision === revision && pendingUpdates === 0) applyCart(cart);
   } catch {
     return;
@@ -45,7 +67,7 @@ function scheduleRefresh() {
 }
 
 class AclaCartStatus extends Component {
-  static observedAttributes = ['data-cart-product-ids'];
+  static observedAttributes = ['data-cart-product-ids', 'data-cart-family-id'];
 
   connectedCallback() {
     super.connectedCallback();
@@ -70,7 +92,9 @@ class AclaCartStatus extends Component {
   renderQuantity() {
     let ids;
     try { ids = JSON.parse(this.dataset.cartProductIds || '[]'); } catch { return; }
-    const quantity = [...new Set(ids.map(String))].reduce((total, id) => total + (quantities.get(id) || 0), 0);
+    const quantity = this.dataset.cartFamilyId
+      ? familyQuantities.get(this.dataset.cartFamilyId) || 0
+      : [...new Set(ids.map(String))].reduce((total, id) => total + (quantities.get(id) || 0), 0);
     this.hidden = quantity === 0;
     this.dataset.cartQuantity = String(quantity);
     const label = this.querySelector('[data-cart-status-label]');
@@ -80,6 +104,7 @@ class AclaCartStatus extends Component {
   }
 }
 
+try { memberships = JSON.parse(document.querySelector('[data-acla-family-snapshot]')?.textContent || '[]'); } catch { memberships = []; }
 try { applyCart(JSON.parse(seed?.textContent || '{"items":[]}')); } catch { applyCart({ items: [] }); }
 if (!customElements.get('acla-cart-status')) customElements.define('acla-cart-status', AclaCartStatus);
 

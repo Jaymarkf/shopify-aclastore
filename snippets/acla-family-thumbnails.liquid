@@ -1,0 +1,144 @@
+{% doc %}
+  Product photos with native slideshow controls when there are more than six images.
+
+  @param {image[]} images - Product gallery images in merchant-defined order.
+  @param {string} product_title - Fallback image description.
+  @param {string} section_id - Unique family section identity.
+
+  @example
+  {% render 'acla-family-thumbnails', images: product.images, product_title: product.title, section_id: section.id %}
+{% enddoc %}
+
+{% if images.size > 1 %}
+  {% liquid
+    # Keep each image batch within Liquid's loop limit.
+    assign last_batch = images.size | minus: 1 | divided_by: 50
+  %}
+  {% capture thumbnails %}
+    {% for batch in (0..last_batch) %}
+      {% assign image_offset = batch | times: 50 %}
+      {% for gallery_image in images offset: image_offset limit: 50 %}
+        {% assign image_index = image_offset | plus: forloop.index0 %}
+        {% assign image_number = image_index | plus: 1 %}
+        {% assign gallery_alt = gallery_image.alt | default: product_title %}
+        {% capture thumbnail %}
+          <button
+            type="button"
+            class="acla-family__thumbnail"
+            data-gallery-image="{{ gallery_image | image_url: width: 1200 }}"
+            data-gallery-srcset="{{ gallery_image | image_url: width: 400 }} 400w, {{ gallery_image | image_url: width: 900 }} 900w, {{ gallery_image | image_url: width: 1200 }} 1200w"
+            data-gallery-alt="{{ gallery_alt | escape }}"
+            aria-controls="FamilyHeroImage-{{ section_id }}"
+            aria-pressed="{% if image_index == 0 %}true{% else %}false{% endif %}"
+            aria-label="{{ 'acla_family.image_number' | t: number: image_number | escape }}"
+          >
+            {{ gallery_image | image_url: width: 140 | image_tag: widths: '70, 140', sizes: '66px', loading: 'lazy', alt: gallery_alt }}
+          </button>
+        {% endcapture %}
+        {% if images.size > 6 %}
+          {% capture slide_id %}FamilyThumbnail-{{ section_id }}-{{ gallery_image.id }}-{{ image_number }}{% endcapture %}
+          {% render 'slideshow-slide', children: thumbnail, index: image_index, slide_id: slide_id, class: 'acla-family__thumbnail-slide' %}
+        {% else %}
+          {{ thumbnail }}
+        {% endif %}
+      {% endfor %}
+    {% endfor %}
+  {% endcapture %}
+  {% if images.size > 6 %}
+    {% capture attributes %}aria-label="{{ 'acla_family.product_images' | t | escape }}" data-family-thumbnail-slider{% endcapture %}
+    {% render 'slideshow', slides: thumbnails, slide_count: images.size, class: 'acla-family__thumbnail-slider', attributes: attributes, show_arrows: true, animate_arrows: false, infinite: false, icon_style: 'chevron', icon_shape: 'circle' %}
+    <noscript><style>.acla-family__thumbnail-slider slideshow-slides{overflow-x:auto!important}.acla-family__thumbnail-slider slideshow-slide{content-visibility:visible!important}.acla-family__thumbnail-slider slideshow-arrows{display:none}</style></noscript>
+  {% else %}
+    <div class="acla-family__thumbnails" role="group" aria-label="{{ 'acla_family.product_images' | t | escape }}">{{ thumbnails }}</div>
+  {% endif %}
+{% endif %}
+
+{% stylesheet %}
+  .acla-family__thumbnails {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--gap-sm);
+    margin-block-start: var(--margin-md);
+  }
+
+  .acla-family__thumbnail {
+    inline-size: 66px;
+    block-size: 66px;
+    flex: 0 0 66px;
+    padding: var(--padding-2xs);
+    border: 1px solid var(--family-border);
+    border-radius: var(--family-radius);
+    background: var(--color-background);
+  }
+
+  .acla-family__thumbnail[aria-pressed='true'] {
+    border-color: var(--family-accent);
+    box-shadow: inset 0 0 0 1px var(--family-accent);
+  }
+
+  .acla-family__thumbnail img {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: contain;
+  }
+
+  .acla-family__thumbnail-slider {
+    --slideshow-gap: 8px;
+    --family-thumbnail-arrow-space: calc(var(--minimum-touch-target) + 6px);
+
+    container-type: inline-size;
+    inline-size: 100%;
+    max-inline-size: 536px;
+    margin-block-start: var(--margin-md);
+    margin-inline: auto;
+  }
+
+  .acla-family__thumbnail-slider > slideshow-container {
+    --family-thumbnail-visible: 6;
+
+    padding-inline: var(--family-thumbnail-arrow-space);
+  }
+
+  .acla-family__thumbnail-slider slideshow-slides {
+    --slide-width: calc((100% - (var(--family-thumbnail-visible) - 1) * var(--slideshow-gap)) / var(--family-thumbnail-visible));
+
+    padding-block: 6px;
+  }
+
+  .acla-family__thumbnail-slide {
+    display: grid;
+    place-items: center;
+    scroll-snap-align: start;
+  }
+
+  .acla-family__thumbnail-slide .acla-family__thumbnail {
+    inline-size: min(100%, 66px);
+    block-size: auto;
+    aspect-ratio: 1;
+  }
+
+  .acla-family__thumbnail-slider .acla-family__thumbnail:focus-visible {
+    outline-offset: -3px;
+  }
+
+  .acla-family__thumbnail-slider .slideshow-control {
+    inline-size: var(--minimum-touch-target);
+    block-size: var(--minimum-touch-target);
+    padding: 0;
+    opacity: 1;
+  }
+
+  .acla-family__thumbnail-slider .slideshow-control:disabled {
+    opacity: var(--opacity-30);
+    cursor: default;
+  }
+
+  @container (width < 480px) {
+    .acla-family__thumbnail-slider > slideshow-container { --family-thumbnail-visible: 4; }
+  }
+
+  @container (width < 360px) {
+    .acla-family__thumbnail-slider > slideshow-container { --family-thumbnail-visible: 3; }
+  }
+{% endstylesheet %}

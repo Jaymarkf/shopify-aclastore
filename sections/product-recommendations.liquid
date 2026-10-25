@@ -1,4 +1,10 @@
 
+{% comment %}
+  Section contract. Renders automatic recommendations or a merchant-selected related collection.
+  @example
+  <!-- Select a collection in Related products to recommend display-only product families. -->
+{% endcomment %}
+
 <script
   src="{{ 'product-recommendations.js' | asset_url }}"
   type="module"
@@ -6,6 +12,16 @@
 ></script>
 
 {% liquid
+  assign current_product = section.settings.product | default: product
+  assign curated_related = false
+  assign group_catalog = settings.catalog_groups | default: collections['storefront-product-groups'] | default: collections.markers
+  if section.settings.recommendation_type == 'related'
+    assign curated_related = true
+  endif
+  if section.settings.recommendation_type == 'related' and section.settings.related_collection != blank
+    assign curated_related = true
+  endif
+
   case section.settings.layout_type
     when 'grid'
       assign classes = 'resource-list--grid'
@@ -38,10 +54,10 @@
   class="product-recommendations"
   data-url="{{ routes.product_recommendations_url }}?limit={{ section.settings.max_products }}"
   data-section-id="{{ section.id }}"
-  data-product-id="{{ section.settings.product.id | default: product.id }}"
+  data-product-id="{{ current_product.id }}"
   data-intent="{{ section.settings.recommendation_type }}"
   data-testid="product-recommendations-section"
-  data-recommendations-performed="{{ recommendations.performed }}"
+  data-recommendations-performed="{% if curated_related %}true{% else %}{{ recommendations.performed }}{% endif %}"
   data-hydration-key="product-recommendations-{{ section.id }}"
   {{ section.shopify_attributes }}
 >
@@ -73,9 +89,12 @@
       {% content_for 'blocks' %}
     </div>
 
-    {%- if recommendations.performed or section.settings.product == blank -%}
+    {%- if curated_related or recommendations.performed or section.settings.product == blank -%}
       {% liquid
-        if section.settings.product == blank
+        if curated_related
+          assign related_source = section.settings.related_collection | default: group_catalog
+          assign products = related_source.products | reject: 'id', current_product.id
+        elsif section.settings.product == blank
           assign products = null
           # Onboarding mode: Show placeholder products
           for i in (1..section.settings.max_products)
@@ -95,8 +114,13 @@
           assign products = recommendations.products
         endif
       %}
+      {% assign rendered_count = 0 %}
       {% capture list_items %}
-        {% for product in products limit: section.settings.max_products %}
+        {% for product in products %}
+          {% capture visible %}{% render 'acla-group-visible', product_resource: product %}{% endcapture %}
+          {% if visible != 'true' %}{% continue %}{% endif %}
+          {% if rendered_count > 0 %}<!--@list/split-->{% endif %}
+          {% assign rendered_count = rendered_count | plus: 1 %}
           <div class="resource-list__item">
             {% content_for 'block',
               type: '_product-card',
@@ -105,9 +129,7 @@
               product_view_context: 'recommendation'
             %}
           </div>
-          {% unless forloop.last %}
-            <!--@list/split-->
-          {% endunless %}
+          {% if rendered_count >= section.settings.max_products %}{% break %}{% endif %}
         {% endfor %}
       {% endcapture %}
 
@@ -116,7 +138,7 @@
         assign slide_content = list_items | strip
         assign slides = slide_content | split: '<!--@list/split-->'
 
-        if products != blank and products.size > 0
+        if rendered_count > 0
           assign has_recommendations = 'true'
         else
           assign has_recommendations = 'false'
@@ -146,7 +168,7 @@
             {% render 'resource-list-carousel',
               ref: 'resourceListCarousel',
               slides: slides,
-              slide_count: recommendations.products.size,
+              slide_count: rendered_count,
               settings: section.settings
             %}
         {% endcase %}
@@ -170,7 +192,7 @@
           {% render 'resource-list-carousel',
             ref: 'resourceListCarouselMobile',
             slides: slides,
-            slide_count: recommendations.products.size,
+            slide_count: rendered_count,
             settings: section.settings
           %}
         </div>
@@ -253,6 +275,12 @@
     {
       "type": "paragraph",
       "content": "t:content.complementary_products"
+    },
+    {
+      "type": "collection",
+      "id": "related_collection",
+      "label": "t:acla_navigation.related_collection",
+      "info": "t:acla_navigation.related_collection_info"
     },
     {
       "type": "header",

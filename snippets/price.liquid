@@ -74,46 +74,31 @@
   endif
 -%}
 
-<div ref="priceContainer">
-  {% if has_volume_pricing %}
-    {% comment %} Volume pricing display {% endcomment %}
-    {% if show_compare_price %}
-      <span class="price-item__group compare-at-price">
-        <span class="visually-hidden">{{ 'content.price_regular' | t }}&nbsp;</span>
-        <bdi>{{- compare_at_price -}}</bdi>
-      </span>
-    {% endif %}
-    <span class="price-item__group price">
-      <span class="visually-hidden">{{ 'content.price_range' | t }}&nbsp;</span>
-      <bdi>{{ price_min }} - {{ price_max }}</bdi>
-    </span>
-  {% else %}
-    {% comment %} Standard pricing display: render only the active branch (regular or sale) {% endcomment %}
-    {% if show_compare_price %}
-      {% if show_sale_price_first %}
-        <span class="price-item__group price">
-          <span class="visually-hidden">{{ 'content.price_sale' | t }}&nbsp;</span>
-          <bdi>{{ price | default: '&nbsp;' }}</bdi>
-        </span>
-        <span class="price-item__group price-item--regular compare-at-price">
-          <span class="visually-hidden">{{ 'content.price_regular' | t }}&nbsp;</span>
-          <bdi>{{- compare_at_price -}}</bdi>
-        </span>
-      {% else %}
-        <span class="price-item__group price-item--regular compare-at-price">
-          <span class="visually-hidden">{{ 'content.price_regular' | t }}&nbsp;</span>
-          <bdi>{{- compare_at_price -}}</bdi>
-        </span>
-        <span class="price-item__group price">
-          <span class="visually-hidden">{{ 'content.price_sale' | t }}&nbsp;</span>
-          <bdi>{{ price | default: '&nbsp;' }}</bdi>
-        </span>
-      {% endif %}
+{% capture list_price_markup %}
+  <span class="price-item__group acla-price-line">
+    <span class="acla-price-label">{{ 'acla_pricing.msrp' | t }}</span>
+    {% if selected_variant.compare_at_price > 0 %}
+      <bdi{% if show_compare_price %} class="compare-at-price"{% endif %}>{{ compare_at_price }}</bdi>
     {% else %}
-      <span class="price"
-        ><bdi>{{ price | default: '&nbsp;' }}</bdi></span
-      >
+      <span>{{ 'acla_pricing.not_listed' | t }}</span>
     {% endif %}
+  </span>
+{% endcapture %}
+{% capture selling_price_markup %}
+  <span class="price-item__group price acla-price-line">
+    <span class="acla-price-label">{{ 'acla_pricing.selling_price' | t }}</span>
+    {% if has_volume_pricing %}
+      <bdi>{{ price_min }} - {{ price_max }}</bdi>
+    {% else %}
+      <bdi>{{ price | default: '&nbsp;' }}</bdi>
+    {% endif %}
+  </span>
+{% endcapture %}
+<div ref="priceContainer">
+  {% if show_sale_price_first %}
+    {{ selling_price_markup }}{{ list_price_markup }}
+  {% else %}
+    {{ list_price_markup }}{{ selling_price_markup }}
   {% endif %}
   {%- if selected_variant.unit_price and show_unit_price %}
     {%- liquid

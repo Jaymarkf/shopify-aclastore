@@ -1,6 +1,24 @@
 
 
-{% if section.blocks.size > 1 %}
+{% comment %}
+  Header announcements support a continuous marquee, the existing fading slideshow,
+  or static messages. Announcement blocks remain the source of text and links.
+  @example Edit Announcement bar in the Header group, then add Announcement blocks.
+{% endcomment %}
+{% liquid
+  assign display_mode = section.settings.display_mode | default: 'slideshow'
+  assign autoplay = false
+  assign show_arrows = false
+  if display_mode == 'slideshow' and section.blocks.size > 1
+    assign autoplay = true
+    assign show_arrows = true
+  endif
+  capture announcements
+    content_for 'blocks'
+  endcapture
+%}
+
+{% if section.blocks.size > 0 %}
   <script
     src="{{ 'announcement-bar.js' | asset_url }}"
     type="module"
@@ -8,40 +26,60 @@
   ></script>
 {% endif %}
 
-{% render 'contrast-override', background_color: section.settings.background_color, section_id: section.id %}
+{% render 'contrast-override', background_color: section.settings.background_color, text_color: section.settings.text_color, section_id: section.id %}
 
-<div class="section-background color-custom-{{ section.id }}"></div>
+<div class="section-background color-custom-{{ section.id }}" {% if section.settings.use_header_background != false %}data-shared-header-background{% endif %}></div>
 <aside
   class="announcement-bar spacing-style section section--{{ section.settings.section_width }} color-custom-{{ section.id }}"
-  style="{% render 'spacing-padding', settings: section.settings %}; --border-bottom-width: {{ section.settings.divider_width }}px;{% if section.settings.divider_color != blank %} --color-border: {{ section.settings.divider_color }};{% endif %}"
+  aria-label="{{ 'acla_announcements.label' | t }}"
+  style="{% render 'spacing-padding', settings: section.settings %}; --announcement-gap: {{ section.settings.marquee_gap | default: 64 }}px; --announcement-mobile-gap: {{ section.settings.marquee_mobile_gap | default: 32 }}px; --border-bottom-width: {{ section.settings.divider_width }}px;{% if section.settings.divider_color != blank %} --color-border: {{ section.settings.divider_color }};{% endif %}"
 >
-  {% liquid
-    assign autoplay = false
-    assign show_arrows = false
-    if section.blocks.size > 1
-      assign autoplay = true
-      assign show_arrows = true
-    endif
-  %}
-
   <announcement-bar-component
-    class="announcement-bar__slider"
+    class="announcement-bar__slider announcement-bar--{{ display_mode }}"
+    data-mode="{{ display_mode }}"
+    data-marquee-speed="{{ section.settings.marquee_speed | default: 40 }}"
+    data-direction="{{ section.settings.marquee_direction | default: 'left' }}"
+    data-pause-label="{{ 'acla_announcements.pause' | t | escape }}"
+    data-play-label="{{ 'acla_announcements.play' | t | escape }}"
+    {% if section.settings.pause_on_hover %}data-pause-on-hover{% endif %}
     {% if autoplay == true %}
-      autoplay="{{ section.settings.speed }}" aria-live="polite"
+      autoplay="{{ section.settings.speed }}"
     {% endif %}
   >
     {% if show_arrows %}
       {% render 'slideshow-arrows', icon_style: 'chevron' %}
     {% endif %}
 
-    <div class="announcement-bar__slides">
-      {% content_for 'blocks' %}
-    </div>
+    {% if display_mode == 'marquee' %}
+      <div class="announcement-bar__viewport" ref="viewport">
+        <div class="announcement-bar__track" ref="track">
+          <div class="announcement-bar__messages" ref="source">{{ announcements }}</div>
+        </div>
+      </div>
+    {% else %}
+      <div class="announcement-bar__slides">{{ announcements }}</div>
+    {% endif %}
+
+    {% if display_mode == 'marquee' or autoplay %}
+      <button
+        type="button"
+        class="announcement-bar__pause button-unstyled"
+        ref="pauseButton"
+        on:click="/togglePlayback"
+        aria-label="{{ 'acla_announcements.pause' | t }}"
+        aria-pressed="false"
+      >
+        <svg class="announcement-bar__pause-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4 3h3v10H4zm5 0h3v10H9z"/></svg>
+        <svg class="announcement-bar__play-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="m5 3 8 5-8 5z"/></svg>
+      </button>
+    {% endif %}
   </announcement-bar-component>
 </aside>
 
 {% stylesheet %}
   .announcement-bar {
+    --announcement-current-gap: var(--announcement-gap);
+    min-inline-size: 0;
     border-block-end: var(--border-bottom-width) solid var(--color-border);
   }
 
@@ -123,6 +161,117 @@
     position: absolute;
     inset: 0;
   }
+
+  .announcement-bar__slide {
+    position: relative;
+  }
+
+  .announcement-bar--static .announcement-bar__slides,
+  .announcement-bar--marquee .announcement-bar__messages {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--announcement-current-gap);
+    inline-size: 100%;
+    max-inline-size: none;
+    flex-wrap: wrap;
+  }
+
+  :is(.announcement-bar--static, .announcement-bar--marquee) .announcement-bar__slide {
+    flex: 0 0 auto;
+    inline-size: auto;
+    max-inline-size: 100%;
+    opacity: 1;
+    visibility: visible;
+    transition: none;
+  }
+
+  .announcement-bar__viewport {
+    inline-size: 100%;
+    min-inline-size: 0;
+    overflow: hidden;
+  }
+
+  .announcement-bar__track {
+    display: flex;
+    direction: ltr;
+  }
+
+  .announcement-bar--marquee[data-ready] {
+    padding-inline-end: 48px;
+    min-block-size: max(14px, calc(44px - var(--padding-block-start) - var(--padding-block-end)));
+  }
+
+  .announcement-bar--marquee[data-ready] .announcement-bar__track {
+    inline-size: max-content;
+  }
+
+  .announcement-bar--marquee[data-ready] .announcement-bar__messages {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    inline-size: max-content;
+    padding-inline-end: var(--announcement-current-gap);
+  }
+
+  .announcement-bar--marquee[data-ready] .announcement-bar__slide {
+    max-inline-size: none;
+  }
+
+  .announcement-bar--marquee[data-ready] .announcement-bar__text {
+    white-space: nowrap;
+  }
+
+  .announcement-bar__pause {
+    display: none;
+    position: absolute;
+    inset-inline-end: 0;
+    inset-block-start: 50%;
+    transform: translateY(-50%);
+    inline-size: 44px;
+    block-size: 44px;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-foreground);
+    border-radius: var(--style-border-radius-buttons-primary);
+  }
+
+  [data-ready] > .announcement-bar__pause {
+    display: flex;
+  }
+
+  .announcement-bar--slideshow[data-ready] .announcement-bar__pause {
+    inset-inline-end: var(--button-size);
+  }
+
+  .announcement-bar--slideshow[data-ready] .announcement-bar__slides {
+    inline-size: calc(100% - var(--button-size) * 4);
+  }
+
+  .announcement-bar__pause:hover {
+    background: rgb(var(--color-foreground-rgb) / var(--opacity-10));
+  }
+
+  .announcement-bar__pause[aria-pressed='false'] .announcement-bar__play-icon,
+  .announcement-bar__pause[aria-pressed='true'] .announcement-bar__pause-icon {
+    display: none;
+  }
+
+  @media screen and (max-width: 749px) {
+    .announcement-bar {
+      --announcement-current-gap: var(--announcement-mobile-gap);
+    }
+
+    .announcement-bar__slide.custom-font-size,
+    .announcement-bar__slide.custom-font-size > * {
+      font-size: var(--announcement-mobile-font-size, var(--font-size));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .announcement-bar__slide {
+      transition: none;
+    }
+  }
 {% endstylesheet %}
 
 {% schema %}
@@ -138,13 +287,77 @@
   },
   "settings": [
     {
+      "type": "select",
+      "id": "display_mode",
+      "label": "t:acla_announcements.mode",
+      "options": [
+        { "value": "marquee", "label": "t:acla_announcements.marquee" },
+        { "value": "slideshow", "label": "t:acla_announcements.slideshow" },
+        { "value": "static", "label": "t:acla_announcements.static" }
+      ],
+      "default": "slideshow",
+      "info": "t:acla_announcements.content_help"
+    },
+    {
       "type": "range",
       "id": "speed",
       "label": "t:settings.scroll_speed",
       "min": 2,
       "max": 10,
       "default": 5,
-      "unit": "sec"
+      "unit": "sec",
+      "visible_if": "{{ section.settings.display_mode == 'slideshow' }}"
+    },
+    {
+      "type": "range",
+      "id": "marquee_speed",
+      "label": "t:acla_announcements.speed",
+      "min": 10,
+      "max": 120,
+      "step": 5,
+      "default": 40,
+      "info": "t:acla_announcements.speed_help",
+      "visible_if": "{{ section.settings.display_mode == 'marquee' }}"
+    },
+    {
+      "type": "select",
+      "id": "marquee_direction",
+      "label": "t:acla_announcements.direction",
+      "options": [
+        { "value": "left", "label": "t:acla_announcements.left" },
+        { "value": "right", "label": "t:acla_announcements.right" }
+      ],
+      "default": "left",
+      "visible_if": "{{ section.settings.display_mode == 'marquee' }}"
+    },
+    {
+      "type": "checkbox",
+      "id": "pause_on_hover",
+      "label": "t:acla_announcements.pause_hover",
+      "default": true,
+      "visible_if": "{{ section.settings.display_mode != 'static' }}"
+    },
+    {
+      "type": "range",
+      "id": "marquee_gap",
+      "label": "t:acla_announcements.gap",
+      "min": 0,
+      "max": 160,
+      "step": 4,
+      "unit": "px",
+      "default": 64,
+      "visible_if": "{{ section.settings.display_mode != 'slideshow' }}"
+    },
+    {
+      "type": "range",
+      "id": "marquee_mobile_gap",
+      "label": "t:acla_announcements.mobile_gap",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "default": 32,
+      "visible_if": "{{ section.settings.display_mode != 'slideshow' }}"
     },
     {
       "type": "header",
@@ -171,6 +384,20 @@
       "id": "background_color",
       "label": "t:settings.background_color",
       "placeholder": "t:settings.default"
+    },
+    {
+      "type": "checkbox",
+      "id": "use_header_background",
+      "label": "t:acla_header_background.share_announcements",
+      "info": "t:acla_header_background.share_help",
+      "default": true
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "t:settings.text_color",
+      "placeholder": "t:settings.default",
+      "info": "t:acla_announcements.color_help"
     },
     {
       "type": "range",
@@ -202,6 +429,26 @@
       "step": 1,
       "unit": "px",
       "default": 15
+    },
+    {
+      "type": "range",
+      "id": "padding-inline-start",
+      "label": "t:acla_announcements.padding_start",
+      "min": 0,
+      "max": 80,
+      "step": 2,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-inline-end",
+      "label": "t:acla_announcements.padding_end",
+      "min": 0,
+      "max": 80,
+      "step": 2,
+      "unit": "px",
+      "default": 0
     },
     {
       "type": "range",

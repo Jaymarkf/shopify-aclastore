@@ -4,7 +4,12 @@
 
 {% assign product = closest.product %}
 {% liquid
-  assign family_product_count = product.metafields.custom.family_products.value | size
+  assign family_product_count = product.metafields.custom.family_products.value.count | default: 0
+  assign family_more_count = product.metafields.custom.family_products_more.value.count | default: 0
+  assign family_product_count = family_product_count | plus: family_more_count
+  if product.metafields.custom.family_collection.value != blank
+    assign family_product_count = product.metafields.custom.family_collection.value.products_count
+  endif
   assign show_product_badge = false
   if family_product_count > 0
     assign show_product_badge = true

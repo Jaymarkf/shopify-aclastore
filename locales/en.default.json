@@ -8,6 +8,11 @@
  * ------------------------------------------------------------
  */
 {
+  "acla_announcements": {
+    "label": "Store announcements",
+    "pause": "Pause announcements",
+    "play": "Play announcements"
+  },
   "accessibility": {
     "account": "Account",
     "active_filters": "Active filters:",
@@ -395,11 +400,11 @@
     "each": "each",
     "read_more": "Read more",
     "show_less": "Show less",
-    "find_your_colors": "Find your next favorite color",
-    "color_count": "{{ count }} colors to explore",
-    "card_color_count": "{{ count }} colors",
-    "shop_colors": "Shop colors",
-    "mix_note": "Mix your favorite colors. Choose a quantity for each one below.",
+    "find_your_colors": "Find your next favorite",
+    "color_count": "{{ count }} options to explore",
+    "card_color_count": "{{ count }} options",
+    "shop_colors": "Shop options",
+    "mix_note": "Choose a quantity for each item below.",
     "shipping_details": "Shipping information",
     "page_navigation": "Product page navigation",
     "shop_products": "Shop products",
@@ -407,19 +412,25 @@
     "questions": "Questions & answers",
     "reviews": "Reviews",
     "build_your_palette": "Build your palette",
-    "choose_quantities": "Choose your colors, set your quantities, and add them together.",
-    "search_colors": "Search colors by name or item number",
-    "search_placeholder": "Search color name or item number",
+    "choose_quantities": "Choose your items, set your quantities, and add them together.",
+    "search_colors": "Search options by name or item number",
+    "search_placeholder": "Search name or item number",
     "in_stock_only": "In stock only",
-    "sort_by": "Sort colors",
+    "sort_by": "Sort options",
     "sort_featured": "Featured order",
-    "sort_name": "Color name: A–Z",
+    "sort_name": "Name: A–Z",
     "sort_price_low": "Price: low to high",
     "sort_price_high": "Price: high to low",
-    "display_view": "Display colors as",
-    "grid_view": "Grid view",
+    "display_view": "Display options as",
+    "grid_view": "Option grid",
     "list_view": "List view",
-    "results_count": "Showing {{ shown }} of {{ total }} colors",
+    "results_count": "Showing {{ shown }} of {{ total }} options",
+    "load_more": "Show more options",
+    "view_all_options": "View all options and item details",
+    "back_to_group": "Back to the product group",
+    "loading_options": "Loading all options…",
+    "load_error": "We couldn’t load all options. Your selection is saved. Choose Retry to try again.",
+    "retry_options": "Retry loading options",
     "swatch_note": "Screen colors may vary from actual ink.",
     "selected_color": "A closer look",
     "sku": "Item #",
@@ -427,18 +438,18 @@
     "add_to_cart": "Add to cart",
     "item_details": "Item details",
     "close_preview": "Close preview",
-    "color": "Color",
+    "color": "Option",
     "price": "Price",
     "availability": "Availability",
-    "available_colors": "Available colors",
-    "no_results": "No colors match your search.",
+    "available_colors": "Available options",
+    "no_results": "No options match your search.",
     "clear_filters": "Clear filters",
     "selected_count": "Selected quantity: {{ count }}",
     "clear_selection": "Clear selection",
     "subtotal": "Subtotal",
     "add_selected": "Add selected to cart",
     "no_javascript": "Open Item details to choose and purchase each color.",
-    "editor_empty": "Choose products in this parent's Products in this group metafield, or use the fallback product selector in this section. Each group supports up to 50 individual products.",
+    "editor_empty": "Choose a Products collection on this product in Admin, then add individual products to that collection.",
     "empty_group": "We’re preparing this selection. Please check back soon.",
     "image_preview": "Enlarged product image",
     "preview_color": "Preview {{ color }}",
@@ -456,6 +467,38 @@
     "cart_error": "We couldn’t add your selection. Please try again.",
     "cart_uncertain": "We couldn’t confirm the cart update. Check your cart before reloading this page to try again.",
     "cart_partial": "Some items were added. Check your cart before trying the remaining quantities.",
-    "quantity_error": "Please check the selected quantities against the available stock."
+    "quantity_error": "Please check the selected quantities against the available stock.",
+    "total_options": "{{ count }} options",
+    "performance_test": "Performance preview: {{ count }} sample rows using {{ real }} real products. Sample rows repeat existing items; cart additions are disabled in this test.",
+    "test_cart_disabled": "Cart additions are disabled for simulated performance-test rows.",
+    "search_match": "Search result: {{ product }}"
+  },
+  "acla_navigation": {
+    "show_brand": "Show {{ brand }} product families"
+  },
+  "acla_category_tiles": {
+    "navigation": "Browse categories",
+    "link_label": "Browse category",
+    "choose_image": "Choose an image and link"
+  },
+  "acla_scroll": {
+    "down": "Scroll down 25% of the page",
+    "up": "Scroll up 25% of the page"
+  },
+  "acla_pricing": {
+    "msrp": "MSRP",
+    "selling_price": "Selling price",
+    "not_listed": "Not listed"
+  },
+  "acla_savings": {
+    "up_to": "Save up to {{ percent }}% off List",
+    "range": "{{ minimum }}%–{{ maximum }}% savings",
+    "item": "Save {{ percent }}% off List",
+    "checkout_note": "Includes checkout offer"
+  },
+  "acla_catalog": {
+    "empty": "No product groups are available here yet.",
+    "browse": "Browse product groups",
+    "search_empty": "No product groups match your search."
   }
 }

@@ -107,7 +107,10 @@
       "foreground": "#000000",
       "color1": "#333333",
       "color2": "#DFDFDF"
-    }
+    },
+    "checkout_savings_enabled": true,
+    "checkout_savings_collection": "olo-brush-colors",
+    "checkout_savings_percent": 50
   },
   "presets": {
     "Horizon": {

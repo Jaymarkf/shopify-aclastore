@@ -1,5 +1,9 @@
 
 
+{% comment %}
+  Header section: navigation, logo, actions, and an optional replaceable background image.
+  @example Configure Header in the header section group through the theme editor.
+{% endcomment %}
 {% liquid
   assign order = 'logo,menu,localization,search,drawer_search,actions'
 
@@ -337,11 +341,30 @@
   }
 </script>
 
+{% if section.settings.header_background_enabled %}
+  {% assign header_image_tint = 100 | minus: section.settings.header_background_opacity | divided_by: 100.0 %}
+  {% style %}
+    #header-group {
+      --header-group-art-image: url("{% if section.settings.header_background_image != blank %}{{ section.settings.header_background_image | image_url: width: 2400 }}{% else %}{{ 'acla-header-watercolor.webp' | asset_url }}{% endif %}");
+      --header-group-art-base: {{ section.settings.background_color_top | default: settings.page_background_color }};
+      --header-group-art-tint: {{ section.settings.background_color_top | default: settings.page_background_color | color_modify: 'alpha', header_image_tint }};
+    }
+    {% if section.settings.header_background_image != blank %}
+      @media screen and (max-width: 749px) {
+        #header-group {
+          --header-group-art-image: url("{{ section.settings.header_background_image | image_url: width: 1100 }}");
+        }
+      }
+    {% endif %}
+  {% endstyle %}
+{% endif %}
+
 <header-component
   id="header-component"
   class="{{ class }}"
   data-theme-color="rgb({{ section.settings.background_color_top.rgb | default: settings.page_background_color.rgb }})"
   data-bubble-style="{{ section.settings.bubble_style }}"
+  {% if section.settings.header_background_enabled %}data-group-background{% endif %}
   {% if transparent %}
     transparent="{{ transparent }}"
   {% endif %}
@@ -383,6 +406,33 @@
   <div
     class="header__underlay header__underlay-open"
   ></div>
+  {% if section.settings.header_background_enabled and transparent %}
+    <div
+      class="header__background-image"
+      style="--header-image-opacity: {{ section.settings.header_background_opacity | divided_by: 100.0 }};"
+      aria-hidden="true"
+    >
+      {% if section.settings.header_background_image != blank %}
+        {{
+          section.settings.header_background_image
+          | image_url: width: 2880
+          | image_tag:
+            widths: '480, 750, 1100, 1500, 2000, 2400, 2880',
+            sizes: '100vw',
+            loading: 'eager',
+            alt: ''
+        }}
+      {% else %}
+        <img
+          src="{{ 'acla-header-watercolor.webp' | asset_url }}"
+          width="2172"
+          height="724"
+          loading="eager"
+          alt=""
+        >
+      {% endif %}
+    </div>
+  {% endif %}
   {%- if request.page_type == 'index' -%}
     <h1 class="visually-hidden">{{ shop.name }}</h1>
   {%- endif -%}
@@ -637,7 +687,7 @@
     --full-open-header-height: 0px;
   }
 
-  #header-group:has(#header-component[sticky]) {
+  #header-group:has(#header-component[sticky]):not(:has(.header[data-group-background]:not([transparent]))) {
     display: contents;
   }
 
@@ -704,6 +754,25 @@
     transition: height var(--submenu-animation-speed) var(--ease-out-cubic);
   }
 
+  /* Transparent headers keep native positioning; artwork also covers their open menu underlay. */
+  .header__background-image {
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    block-size: max(var(--closed-underlay-height, 100%), var(--full-open-header-height));
+    overflow: hidden;
+    pointer-events: none;
+    transition: block-size var(--submenu-animation-speed) var(--ease-out-cubic);
+  }
+
+  .header__background-image img {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+    opacity: var(--header-image-opacity);
+  }
+
   .header__underlay-open::after {
     content: '';
     position: absolute;
@@ -755,6 +824,61 @@
       var(--color-background-top-row) 0 var(--top-row-height),
       var(--color-submenu) var(--top-row-height) 100%
     );
+  }
+
+  /* A real group box owns one continuous image. Its sticky offset lets preceding
+     announcements scroll away while keeping the existing header position. */
+  #header-group:has(.header[data-group-background]):not(:has(.header[transparent])) {
+    display: block;
+    position: relative;
+    z-index: var(--layer-menu-drawer);
+    isolation: isolate;
+    background-color: var(--header-group-art-base);
+
+    &::before {
+      content: '';
+      position: absolute;
+      z-index: var(--layer-lowest);
+      inset-block-start: 0;
+      inset-inline: 0;
+      block-size: calc(100% + var(--header-group-menu-extension, 0px));
+      background-color: var(--header-group-art-base);
+      background-image: linear-gradient(var(--header-group-art-tint), var(--header-group-art-tint)), var(--header-group-art-image);
+      background-position: center;
+      background-size: cover;
+      pointer-events: none;
+      transition: block-size var(--submenu-animation-speed) var(--ease-out-cubic);
+    }
+
+    &:has(.header[sticky='always']),
+    &:has(.header[sticky='scroll-up'][data-sticky-state='active']) {
+      position: sticky;
+      top: calc(-1px - var(--header-group-before-height, 0px));
+    }
+
+    > .header-section {
+      position: relative;
+      top: auto;
+    }
+
+    > .shopify-section:not(.header-section) {
+      isolation: isolate;
+    }
+
+    .header > .header__underlay {
+      background: transparent;
+    }
+
+    .section-background[data-shared-header-background] {
+      background: transparent;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #header-group:has(.header[data-group-background]):not(:has(.header[transparent]))::before,
+    .header__background-image {
+      transition: none;
+    }
   }
 
   /* End Underlays ================ */
@@ -1690,6 +1814,30 @@
     {
       "type": "header",
       "content": "t:content.colors"
+    },
+    {
+      "type": "checkbox",
+      "id": "header_background_enabled",
+      "label": "t:acla_header_background.enabled",
+      "default": false
+    },
+    {
+      "type": "image_picker",
+      "id": "header_background_image",
+      "label": "t:content.background_image",
+      "info": "t:acla_header_background.image_help",
+      "visible_if": "{{ section.settings.header_background_enabled }}"
+    },
+    {
+      "type": "range",
+      "id": "header_background_opacity",
+      "label": "t:acla_header_background.opacity",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 85,
+      "visible_if": "{{ section.settings.header_background_enabled }}"
     },
     {
       "type": "color",

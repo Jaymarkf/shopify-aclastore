@@ -74,6 +74,34 @@
     "settings": [
       {
         "type": "header",
+        "content": "t:acla_product_title.heading"
+      },
+      {
+        "type": "paragraph",
+        "content": "t:acla_product_title.help"
+      },
+      {
+        "type": "range",
+        "id": "product_title_size",
+        "label": "t:acla_product_title.desktop",
+        "min": 16,
+        "max": 60,
+        "step": 1,
+        "unit": "px",
+        "default": 30
+      },
+      {
+        "type": "range",
+        "id": "product_title_mobile_size",
+        "label": "t:acla_product_title.mobile",
+        "min": 16,
+        "max": 40,
+        "step": 1,
+        "unit": "px",
+        "default": 22
+      },
+      {
+        "type": "header",
         "content": "t:content.colors"
       },
       {
@@ -2114,6 +2142,60 @@
           }
         ],
         "default": "equal-width-buttons"
+      }
+    ]
+  },
+  {
+    "name": "t:acla_catalog.settings_name",
+    "settings": [
+      {
+        "type": "collection",
+        "id": "catalog_groups",
+        "label": "t:acla_catalog.collection",
+        "info": "t:acla_catalog.collection_help"
+      }
+    ]
+  },
+  {
+    "name": "t:acla_savings.name",
+    "settings": [
+      {
+        "type": "paragraph",
+        "content": "t:acla_savings.help"
+      },
+      {
+        "type": "checkbox",
+        "id": "checkout_savings_enabled",
+        "label": "t:acla_savings.enabled",
+        "default": false
+      },
+      {
+        "type": "collection",
+        "id": "checkout_savings_collection",
+        "label": "t:acla_savings.collection"
+      },
+      {
+        "type": "range",
+        "id": "checkout_savings_percent",
+        "label": "t:acla_savings.percent",
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "unit": "%",
+        "default": 0,
+        "visible_if": "{{ settings.checkout_savings_enabled }}"
+      }
+    ]
+  },
+  {
+    "name": "t:acla_scroll.name",
+    "settings": [
+      {
+        "type": "checkbox",
+        "id": "product_scroll_enabled",
+        "label": "t:acla_scroll.enabled",
+        "info": "t:acla_scroll.help",
+        "default": true
       }
     ]
   }

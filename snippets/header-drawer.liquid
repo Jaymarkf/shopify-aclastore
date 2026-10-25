@@ -1337,6 +1337,16 @@
     padding-inline-start: max(0px, calc(var(--safe-area-inset-right) - var(--drawer-padding)));
   }
 
+  /* Use the header's selected image and strength throughout every full-height drawer panel. */
+  .header[data-group-background] :is(.menu-drawer, .menu-drawer__submenu) {
+    block-size: var(--drawer-height, 100dvh);
+    background-color: var(--header-group-art-base);
+    background-image: linear-gradient(var(--header-group-art-tint), var(--header-group-art-tint)), var(--header-group-art-image);
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+  }
+
   .menu-drawer__back-button > .svg-wrapper {
     margin-inline-end: var(--padding-md);
     width: var(--icon-size-xs);

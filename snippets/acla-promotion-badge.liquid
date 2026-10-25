@@ -1,5 +1,6 @@
 {% doc %}
-  Renders the first enabled promotion assigned through a product's collections.
+  Renders price-derived savings for a family, or an individual product.
+  Existing collection messages remain the fallback for products without savings.
 
   @param {product} product_resource - The product whose promotion is shown
 
@@ -7,6 +8,37 @@
   {% render 'acla-promotion-badge', product_resource: product %}
 {% enddoc %}
 
+{% liquid
+  assign source_collection = product_resource.metafields.custom.family_collection.value
+  assign legacy_count = product_resource.metafields.custom.family_products.value.count | default: 0
+  assign legacy_more_count = product_resource.metafields.custom.family_products_more.value.count | default: 0
+  assign legacy_count = legacy_count | plus: legacy_more_count
+  assign savings_variant = product_resource.selected_or_first_available_variant
+%}
+{% capture checkout_rate %}{% render 'acla-checkout-rate', product_resource: product_resource %}{% endcapture %}
+{% if source_collection != blank or legacy_count > 0 %}
+  <acla-savings-badge
+    class="acla-promotion-badge"
+    data-scale-module="{{ 'acla-family-scale.js' | asset_url }}"
+    {% if source_collection != blank %}data-index-url="{{ source_collection.url }}?view=family-index"{% else %}data-catalog-url="{{ product_resource.url }}?view=family-savings"{% endif %}
+    data-up-to="{{ 'acla_savings.up_to' | t: percent: '[percent]' | escape }}"
+    data-range="{{ 'acla_savings.range' | t: minimum: '[minimum]', maximum: '[maximum]' | escape }}"
+    hidden
+  ><span ref="label"></span></acla-savings-badge>
+{% else %}
+  {% liquid
+    assign checkout_rate = checkout_rate | plus: 0
+    assign reference_price = savings_variant.compare_at_price | at_least: savings_variant.price
+    assign remaining_percent = 100 | minus: checkout_rate
+    assign final_price = savings_variant.price | times: remaining_percent | divided_by: 100.0 | round
+    assign savings = 0
+    if reference_price > 0
+      assign savings = reference_price | minus: final_price | times: 100.0 | divided_by: reference_price | round
+    endif
+  %}
+  {% if savings > 0 %}
+    <span class="acla-promotion-badge">{{ 'acla_savings.item' | t: percent: savings }}</span>
+  {% else %}
 {% for promotion_collection in product_resource.collections %}
   {% assign promotion_text = promotion_collection.metafields.custom.promotion_badge.value %}
   {% if promotion_text != blank %}
@@ -16,3 +48,5 @@
     {% endif %}
   {% endif %}
 {% endfor %}
+  {% endif %}
+{% endif %}

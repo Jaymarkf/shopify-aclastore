@@ -1,0 +1,12 @@
+{% layout none %}
+{% comment %}Native collection pages supply only the purchase records near the viewport.{% endcomment %}
+{% paginate collection.products by 20 %}
+  {% capture entries %}
+    {% for item_product in collection.products %}
+      {% unless forloop.first %},{% endunless %}
+      {% assign position = paginate.current_offset | plus: forloop.index %}
+      {% render 'acla-family-item', item_product: item_product, family_id: collection.id, position: position, format: 'json' %}
+    {% endfor %}
+  {% endcapture %}
+  <script type="application/json" data-family-records data-collection-id="{{ collection.id }}">[{{ entries | replace: '<', '\u003c' }}]</script>
+{% endpaginate %}

@@ -1,0 +1,50 @@
+{% doc %}
+  Lightweight complete family catalog for deferred loading and a no-JavaScript option index.
+
+  @param {product} product_resource - Parent whose collection or legacy reference lists are resolved.
+
+  @example
+  {% render 'acla-family-catalog', product_resource: product %}
+{% enddoc %}
+
+{% liquid
+  assign group_keys = 'family_products,family_products_more' | split: ','
+  assign seen_ids = product_resource.id | prepend: '|' | append: '|'
+  assign item_count = 0
+  assign entries = ''
+  assign source_collection = product_resource.metafields.custom.family_collection.value
+%}
+<h1>{{ product_resource.title | escape }}</h1>
+<p><a href="{{ product_resource.url }}">{{ 'acla_family.back_to_group' | t }}</a></p>
+{% if source_collection != blank %}
+  {% paginate source_collection.products by 50 %}
+    <ul>
+      {% for child in source_collection.products %}
+        <li><a href="{{ child.url }}">{{ child.title | escape }} — {{ child.price | money }}</a></li>
+      {% endfor %}
+    </ul>
+    {{ paginate | default_pagination }}
+  {% endpaginate %}
+{% else %}
+  <ul>
+    {% for group_key in group_keys %}
+      {% assign group_products = product_resource.metafields.custom[group_key].value %}
+      {% if group_products != blank %}
+        {% paginate group_products by 128 %}
+          {% for item_product in group_products %}
+            {% assign item_key = item_product.id | prepend: '|' | append: '|' %}
+            {% unless seen_ids contains item_key %}
+              {% assign seen_ids = seen_ids | append: item_key %}
+              {% assign item_count = item_count | plus: 1 %}
+              {% capture entry %}{% if item_count > 1 %},{% endif %}{% render 'acla-family-item', item_product: item_product, family_id: product_resource.id, position: item_count, format: 'json' %}{% endcapture %}
+              {% assign entries = entries | append: entry %}
+              <li><a href="{{ item_product.url }}">{{ item_product.title | escape }} — {{ item_product.price | money }}</a></li>
+            {% endunless %}
+          {% endfor %}
+        {% endpaginate %}
+      {% endif %}
+    {% endfor %}
+  </ul>
+  <script type="application/json" data-family-catalog data-family-product-id="{{ product_resource.id }}">[{{ entries | replace: '<', '\u003c' }}]</script>
+{% endif %}
+
