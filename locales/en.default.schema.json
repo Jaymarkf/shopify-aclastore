@@ -8,6 +8,39 @@
  * ------------------------------------------------------------
  */
 {
+  "acla_collection_banner": {
+    "name": "Collection banner",
+    "hide_empty": "Hide when image is empty"
+  },
+  "acla_card_images": {
+    "fit": "Image fit",
+    "contain": "Fit whole image (no crop)",
+    "cover": "Fill area (crop)",
+    "help": "Choose Square or another fixed aspect ratio for equal image heights. Fit whole image preserves the full photo and its proportions, with space around it when needed. Image zoom and card hover transforms are disabled for this fit so edges stay visible."
+  },
+  "acla_brand_header": {
+    "logo_image": "Header logo image",
+    "included_logo": "Use included CarpeDiem logo when no image is selected",
+    "logo_alt": "Logo accessible name",
+    "desktop_width": "Logo width on desktop",
+    "mobile_width": "Logo width on mobile",
+    "logo_help": "Choose or upload a transparent logo above. With no image selected, use the included logo or turn it off to use the global logo from Theme settings. Transparent headers still support the global inverse logo.",
+    "layout": "Branded store header",
+    "layout_help": "Address at the left, store hours at the right, and navigation below. With no center image, the logo is centered. Selecting a center image moves the logo to the upper left on desktop. All changes preview before saving.",
+    "row_height": "Branding row minimum height on desktop",
+    "left_text": "Left text (address or contact details)",
+    "right_text": "Right text (store hours or a message)",
+    "campaign_image": "Center promotional image",
+    "included_promo": "Show transparent Copic promotion",
+    "included_promo_help": "Shows the included transparent PNG when no image is selected above. Upload your own image to replace it. Turn this off with no image selected to center the main logo again.",
+    "campaign_help": "Optional. Upload a transparent PNG or WebP for a promotion. The whole image is displayed without cropping. Remove it to center the main logo again.",
+    "campaign_link": "Promotional image link",
+    "campaign_alt": "Promotional image description",
+    "campaign_width": "Promotional image maximum width",
+    "corner_logo_width": "Upper-left logo width",
+    "accent_background": "Cart and Home button background",
+    "accent_text": "Cart and Home button text"
+  },
   "acla_announcements": {
     "mode": "Announcement style",
     "marquee": "Scrolling marquee",
@@ -1270,6 +1303,8 @@
   },
   "acla_family": {
     "section_name": "Product family",
+    "breadcrumb_menu": "Breadcrumb navigation",
+    "breadcrumb_menu_info": "Use the same menu as the header. Breadcrumbs follow collection and product links in this menu, using only collections the product belongs to.",
     "setup_help": "Choose a Products collection on the parent product in Admin. Manage its individual products in Products > Collections. Existing prices, SKUs and stock are used; no variants are created.",
     "products_label": "Fallback products",
     "products_help": "Used only when this product has no Products in this group metafield. Select up to 50 products.",
@@ -1312,6 +1347,8 @@
   "acla_category_tiles": {
     "section_name": "Category tiles",
     "tile_name": "Category tile",
+    "slide_name": "Image slide",
+    "slides_help": "Image and Link below are an optional first slide. For more slides, use Add block > Image slide inside this tile. Each slide has its own image and link. Arrows appear with two or more slides. Shopify's section block limit applies.",
     "image_shape": "Image shape",
     "landscape": "Landscape",
     "square": "Square"

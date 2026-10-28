@@ -96,17 +96,24 @@
       {% for link in block_settings.menu.links %}
         <li
           class="menu-list__list-item"
-          on:blur="/deactivate"
-          on:pointerenter="/activate"
-          on:pointerleave="/deactivate"
         >
-          {%- if link.links != blank -%}
-            <span class="menu-list__trigger">
-          {%- endif -%}
+          {% if link.links != blank %}
+            <button
+              class="menu-list__link menu-list__parent button-unstyled{% if link.active %} menu-list__link--active{% endif %}"
+              type="button"
+              ref="menuitem"
+              aria-controls="submenu-{{ section.id }}-{{ block.id }}-{{ forloop.index }}"
+              aria-expanded="false"
+              on:click="/toggle"
+            >
+              <span class="menu-list__link-title">{{ link.title | escape }}</span>
+              <svg class="menu-list__disclosure-icon" aria-hidden="true" focusable="false" viewBox="0 0 10 6">{% render 'icon', icon: 'caret' %}</svg>
+            </button>
+          {% else %}
           <a
             href="{{ link.url }}"
             data-skip-node-update="true"
-            class="menu-list__link{% if link.active %} menu-list__link--active{% endif %}"
+            class="menu-list__link{% if section.settings.brand_header and link.type == 'frontpage_link' %} header-brand__home color-custom-header-accent-{{ section.id }}{% endif %}{% if link.active %} menu-list__link--active{% endif %}"
             {% if link.current %}
               aria-current="page"
             {% endif %}
@@ -114,38 +121,19 @@
           >
             <span class="menu-list__link-title">{{- link.title -}}</span>
           </a>
+          {% endif %}
           {%- if link.links != blank -%}
-            <button
-              type="button"
-              class="menu-list__disclosure button-unstyled"
-              aria-controls="submenu-{{ forloop.index }}"
-              aria-expanded="false"
-              ref="disclosure[]"
-              data-skip-node-update
-              on:click="/toggle"
-            >
-              <span class="visually-hidden">{{ 'accessibility.show_submenu' | t: title: link.title }}</span>
-              <svg
-                class="menu-list__disclosure-icon"
-                aria-hidden="true"
-                focusable="false"
-                viewBox="0 0 10 6"
-              >
-                {%- render 'icon', icon: 'caret' -%}
-              </svg>
-            </button>
-            </span>
             {%- comment -%}
               Collapsed by default via `inert`: keeps the submenu out of the tab order
               and the accessibility tree until it is opened. Toggled in header-menu.js.
             {%- endcomment -%}
             <div class="menu-list__submenu{{ background_color_classes }}" ref="submenu[]" data-skip-node-update inert>
               <div
-                id="submenu-{{ forloop.index }}"
+                id="submenu-{{ section.id }}-{{ block.id }}-{{ forloop.index }}"
                 class="menu-list__submenu-inner"
                 style="{% render 'submenu-font-styles', settings: block_settings %}"
               >
-                {% assign list_id = 'MegaMenuList-' | append: forloop.index %}
+                {% assign list_id = section.id | append: '-' | append: block.id | append: '-MegaMenuList-' | append: forloop.index %}
                 <div class="mega-menu section section--full-width-margin section--{{ section.settings.section_width }}">
                   <div
                     class="mega-menu__grid"
@@ -154,6 +142,7 @@
                     {% if menu_content_type == 'cascading' %}
                       {% render 'acla-brand-menu', parent_link: link, menu_id: list_id %}
                     {% else %}
+                    <a class="header-menu__view-all" href="{{ link.url }}">{{ 'acla_navigation.view_all' | t: title: link.title | escape }}</a>
                     {% render 'mega-menu-list',
                       parent_link: link,
                       id: list_id,
@@ -176,9 +165,6 @@
       <li
         class="menu-list__list-item"
         slot="more"
-        on:blur="/deactivate"
-        on:pointerenter="/activate"
-        on:pointerleave="/deactivate"
       >
         <button
           class="menu-list__link button-unstyled"
@@ -197,6 +183,7 @@
     <header-menu
       ref="headerMenu"
       class="header-menu"
+      data-activation="click"
       {{ block.shopify_attributes }}
       data-hydration-key="header-menu"
       data-skip-node-update
@@ -218,6 +205,12 @@
           %}
         </nav>
       </div>
+
+      <noscript>
+        <nav class="header-menu__fallback" aria-label="{{ 'accessibility.header_navigation_label' | t }}">
+          {% for link in block_settings.menu.links %}<a href="{{ link.url }}">{{ link.title | escape }}</a>{% endfor %}
+        </nav>
+      </noscript>
 
       <script
         src="{{ 'header-menu.js' | asset_url }}"
@@ -508,13 +501,10 @@
     }
   }
 
-  /* Show the submenus on hover */
+  /* Disclosure state owns visibility, including while the pointer remains over a closed panel. */
   .menu-list__list-item:has([aria-expanded='true']) > .menu-list__submenu,
-  /* Show the overflow menu when a menu item is hovered */
   .overflow-menu:has([slot="overflow"] [aria-expanded='true'])::part(overflow-list),
-  /* Keep the submenus open when they are hovered */
-  .menu-list__submenu:is(:hover),
-  .overflow-menu::part(overflow):hover {
+  .overflow-menu:has([slot="more"] [aria-expanded='true'])::part(overflow-list) {
     --submenu-content-opacity: 1;
 
     visibility: visible;
@@ -603,6 +593,67 @@
   .header-menu {
     height: 100%;
   }
+
+  .menu-list__link.menu-list__parent {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--gap-xs);
+    text-align: start;
+  }
+
+  .menu-list__parent .menu-list__disclosure-icon { flex-shrink: 0; }
+  .menu-list__parent[aria-expanded='true'] .menu-list__disclosure-icon { transform: rotate(180deg); }
+
+  .header-menu[data-activation='click'] .menu-list__submenu-inner {
+    padding-block-start: var(--padding-sm);
+    padding-block-end: var(--padding-md);
+  }
+
+  .header-menu[data-activation='click'] .overflow-menu::part(overflow-list) {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+    grid-template-areas: none;
+    gap: var(--gap-xs);
+    padding: var(--padding-md);
+    border: 1px solid rgb(var(--color-foreground-rgb) / var(--opacity-10));
+    border-radius: var(--style-border-radius-popover);
+    background: rgb(var(--color-background-rgb) / 0.97);
+    box-shadow: 0 8px 28px rgb(var(--color-foreground-rgb) / var(--opacity-10));
+  }
+
+  .header-menu[data-activation='click'] [slot='overflow'] > .menu-list__link {
+    grid-area: auto;
+    grid-row: 1;
+    min-block-size: var(--minimum-touch-target);
+    block-size: 100%;
+    font-size: var(--menu-top-level-font-size-desktop);
+  }
+
+  .header-menu[data-activation='click'] [slot='overflow'] > .menu-list__submenu {
+    display: none;
+    grid-area: auto;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    padding-inline: 0;
+    padding-block-start: var(--padding-sm);
+  }
+
+  .header-menu[data-activation='click'] [slot='overflow']:has(> [aria-expanded='true']) > .menu-list__submenu {
+    display: block;
+    visibility: visible;
+  }
+
+  .header-menu[data-activation='click'] [slot='overflow'] .menu-list__disclosure-icon,
+  .header-menu[data-activation='click'] [slot='overflow'] [aria-expanded='true'] .menu-list__disclosure-icon {
+    transform: none;
+  }
+
+  .header-menu[data-activation='click'] [slot='overflow'] [aria-expanded='true'] .menu-list__disclosure-icon { transform: rotate(180deg); }
+  .header-menu__view-all { grid-column: 1 / -1; color: inherit; min-block-size: var(--minimum-touch-target); }
+  .header-menu:not(:defined):has(.header-menu__fallback) .header-menu__inner { display: none; }
+  #header-component .header-menu:not(:defined):has(.header-menu__fallback) { display: block; }
+  .header-menu:defined .header-menu__fallback { display: none; }
+  .header-menu__fallback { display: flex; flex-wrap: wrap; gap: var(--gap-md); }
+  .header-menu__fallback a { color: inherit; padding: var(--padding-sm); }
 
   .menu-list__submenu-inner {
     position: relative;

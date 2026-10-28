@@ -86,6 +86,93 @@
         "padding-block-end": 0
       }
     },
+    "acla_category_tiles": {
+      "type": "acla-category-tiles",
+      "blocks": {
+        "acla_category_tile_EMchAn": {
+          "type": "acla-category-tile",
+          "name": "t:acla_category_tiles.tile_name",
+          "settings": {
+            "link": ""
+          },
+          "blocks": {}
+        },
+        "acla_category_tile_fUAiyF": {
+          "type": "acla-category-tile",
+          "name": "t:acla_category_tiles.tile_name",
+          "settings": {
+            "link": ""
+          },
+          "blocks": {}
+        },
+        "acla_category_tile_EWrVRP": {
+          "type": "acla-category-tile",
+          "name": "t:acla_category_tiles.tile_name",
+          "settings": {
+            "link": ""
+          },
+          "blocks": {}
+        },
+        "acla_category_tile_FAtV4y": {
+          "type": "acla-category-tile",
+          "name": "t:acla_category_tiles.tile_name",
+          "settings": {
+            "link": ""
+          },
+          "blocks": {}
+        },
+        "acla_category_tile_WahCJX": {
+          "type": "acla-category-tile",
+          "name": "t:acla_category_tiles.tile_name",
+          "settings": {
+            "link": ""
+          },
+          "blocks": {}
+        },
+        "acla_category_tile_7Ambmc": {
+          "type": "acla-category-tile",
+          "name": "t:acla_category_tiles.tile_name",
+          "settings": {
+            "link": ""
+          },
+          "blocks": {}
+        },
+        "tile_one": {
+          "type": "acla-category-tile",
+          "settings": {
+            "link": ""
+          },
+          "blocks": {}
+        },
+        "tile_two": {
+          "type": "acla-category-tile",
+          "settings": {
+            "link": ""
+          },
+          "blocks": {}
+        }
+      },
+      "block_order": [
+        "acla_category_tile_EMchAn",
+        "acla_category_tile_fUAiyF",
+        "acla_category_tile_EWrVRP",
+        "acla_category_tile_FAtV4y",
+        "acla_category_tile_WahCJX",
+        "acla_category_tile_7Ambmc",
+        "tile_one",
+        "tile_two"
+      ],
+      "name": "t:acla_category_tiles.section_name",
+      "settings": {
+        "columns": 4,
+        "mobile_columns": "2",
+        "image_ratio": "3 / 2",
+        "gap": 16,
+        "corner_radius": 12,
+        "padding-block-start": 16,
+        "padding-block-end": 16
+      }
+    },
     "product_list_Gb3wpL": {
       "type": "product-list",
       "blocks": {
@@ -195,7 +282,7 @@
               "type": "_product-card-gallery",
               "name": "t:names.product_card_media",
               "settings": {
-                "image_ratio": "adapt",
+                "image_ratio": "square",
                 "border": "none",
                 "border_width": 1,
                 "border_opacity": 100,
@@ -204,7 +291,8 @@
                 "padding-block-start": 0,
                 "padding-block-end": 0,
                 "padding-inline-start": 0,
-                "padding-inline-end": 0
+                "padding-inline-end": 0,
+                "image_fit": "contain"
               },
               "blocks": {}
             },
@@ -278,44 +366,12 @@
         "icons_style": "arrow",
         "icons_shape": "circle",
         "section_width": "page-width",
+        "contain_carousel": true,
         "horizontal_alignment": "center",
         "gap": 28,
         "background_color": "",
         "padding-block-start": 48,
-        "padding-block-end": 48,
-        "contain_carousel": true
-      }
-    },
-    "acla_category_tiles": {
-      "type": "acla-category-tiles",
-      "blocks": {
-        "tile_one": {
-          "type": "acla-category-tile",
-          "settings": {}
-        },
-        "tile_two": {
-          "type": "acla-category-tile",
-          "settings": {}
-        },
-        "tile_three": {
-          "type": "acla-category-tile",
-          "settings": {}
-        }
-      },
-      "block_order": [
-        "tile_one",
-        "tile_two",
-        "tile_three"
-      ],
-      "name": "t:acla_category_tiles.section_name",
-      "settings": {
-        "columns": 3,
-        "mobile_columns": "2",
-        "image_ratio": "3 / 2",
-        "gap": 16,
-        "corner_radius": 12,
-        "padding-block-start": 16,
-        "padding-block-end": 16
+        "padding-block-end": 48
       }
     }
   },

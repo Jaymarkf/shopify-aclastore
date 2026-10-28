@@ -68,6 +68,7 @@
   data-catalog-url="{{ product.url }}?view=family-options"
   data-view="{{ section.settings.default_view }}"
   data-currency="{{ localization.country.currency.iso_code }}"
+  data-currency-code="{{ settings.currency_code_enabled_product_pages }}"
   data-locale="{{ request.locale.iso_code }}"
   data-cart-add-url="{{ routes.cart_add_url }}.js"
   data-cart-url="{{ routes.cart_url }}"
@@ -77,7 +78,7 @@
     <nav class="acla-family__breadcrumb" aria-label="{{ 'acla_family.breadcrumb' | t }}">
       <a href="{{ routes.root_url }}">{{ 'acla_family.home' | t }}</a>
       <span aria-hidden="true">/</span>
-      <a href="{{ routes.all_products_collection_url }}">{{ 'acla_family.art_supplies' | t }}</a>
+      {% render 'acla-product-collection-breadcrumb', product_resource: product, navigation_menu: section.settings.breadcrumb_menu, context_collection: collection %}
       <span aria-hidden="true">/</span>
       <span aria-current="page">{{ product.title | escape }}</span>
     </nav>
@@ -97,7 +98,16 @@
         <p class="acla-family__image-note">{{ 'acla_family.image_note' | t }}</p>
       </div>
 
-      <div class="acla-family__intro">
+      <div class="acla-family__intro"
+        {% if family_count > 0 %}
+          data-family-price-summary
+          data-price-currency="{{ localization.country.currency.iso_code }}"
+          data-price-locale="{{ request.locale.iso_code }}"
+          data-price-currency-code="{{ settings.currency_code_enabled_product_pages }}"
+          data-msrp-unavailable="{{ 'acla_pricing.not_listed' | t | escape }}"
+          data-msrp-fallback="{{ 'acla_family.view_options' | t | escape }}"
+        {% endif %}
+      >
         {% if product.vendor != blank %}<p class="acla-family__brand">{{ product.vendor | escape }}</p>{% endif %}
         <h1>{{ product.title | escape }}</h1>
         {% if product.metafields.reviews.rating.value != blank %}
@@ -110,11 +120,11 @@
           </p>
         {% endif %}
         {% if family_count > 0 %}
-          <p class="acla-family__list-price" data-family-msrp hidden>{{ 'acla_pricing.msrp' | t }} <span data-family-msrp-value></span></p>
+          <p class="acla-family__list-price" data-family-msrp hidden>{{ 'acla_pricing.msrp' | t }} <span data-family-msrp-value data-family-card-msrp></span></p>
           <p class="acla-family__hero-price">
             <span>{{ 'acla_pricing.selling_price' | t }}</span>
-            <span data-family-price-from{% if family_count <= initial_count %} hidden{% endif %}>{{ 'acla_family.from' | t }}</span>
-            <strong data-family-price>{{ minimum_price | money }}</strong><span>{{ 'acla_family.each' | t }}</span>
+            <span data-family-price-from data-family-card-from{% if family_count <= initial_count %} hidden{% endif %}>{{ 'acla_family.from' | t }}</span>
+            <strong data-family-price data-family-card-selling>{{ minimum_price | money }}</strong><span>{{ 'acla_family.each' | t }}</span>
             {% render 'acla-promotion-badge', product_resource: product %}
             {{ family_cart_status }}
           </p>
@@ -500,7 +510,11 @@
       this.itemTemplate = this.items[0]?.cloneNode(true);
       this.currentCartQuantities = null;
       this.strings = JSON.parse(this.querySelector('[data-family-strings]').textContent);
-      this.formatter = new Intl.NumberFormat(this.dataset.locale || document.documentElement.lang || 'en', { style: 'currency', currency: this.dataset.currency || 'USD' });
+      this.formatter = new Intl.NumberFormat(this.dataset.locale || document.documentElement.lang || 'en', {
+        style: 'currency',
+        currency: this.dataset.currency || 'USD',
+        currencyDisplay: this.dataset.currencyCode === 'true' ? 'code' : 'symbol',
+      });
       this.pending = false;
       this.uncertain = false;
       this.motion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -1170,6 +1184,8 @@
     }
     updateFamilyPrice() {
       if (!this.catalog.length) return;
+      // The initial collection rows are only a preview, not the complete price range.
+      if (this.scalable && !this.scaleSource) return;
       const prices = this.catalog.map(data => data.price);
       const minimum = Math.min(...prices);
       this.querySelector('[data-family-price]').textContent = this.money(minimum);
@@ -1499,6 +1515,13 @@
     {
       "type": "paragraph",
       "content": "t:acla_family.setup_help"
+    },
+    {
+      "type": "link_list",
+      "id": "breadcrumb_menu",
+      "label": "t:acla_family.breadcrumb_menu",
+      "info": "t:acla_family.breadcrumb_menu_info",
+      "default": "main-menu"
     },
     {
       "type": "product_list",

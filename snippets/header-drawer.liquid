@@ -417,6 +417,9 @@
                                         role="list"
                                         tabindex="-1"
                                       >
+                                        <li class="menu-drawer__list-item">
+                                          <a href="{{ childlink.url }}" class="menu-drawer__menu-item menu-drawer__menu-item--child">{{ 'acla_navigation.view_all' | t: title: childlink.title | escape }}</a>
+                                        </li>
                                         {%- for grandchildlink in childlink.links -%}
                                           <li
                                             class="menu-drawer__list-item"
@@ -593,6 +596,7 @@
         class="menu-drawer__utility-links menu-drawer__animated-element"
         style="--menu-drawer-animation-index: {{ linklist.links.size }};"
       >
+        {% render 'header-store-info', settings: section.settings %}
         {% liquid
           assign show_language = section.settings.show_language
           if localization.available_languages.size <= 1
@@ -1345,6 +1349,38 @@
     background-position: center;
     background-size: cover;
     background-repeat: no-repeat;
+  }
+
+  .header[data-group-background] .menu-drawer__navigation > .menu-drawer__menu,
+  .header[data-group-background] .menu-drawer__submenu > .menu-drawer__menu--childlist,
+  .header[data-group-background] .menu-drawer__inner-submenu > .menu-drawer__menu--childlist {
+    inline-size: calc(100% - var(--margin-md) * 2);
+    margin-inline: var(--margin-md);
+    padding: var(--padding-sm) var(--padding-md);
+    border: 1px solid rgb(var(--color-foreground-rgb) / var(--opacity-10));
+    border-radius: var(--style-border-radius-popover);
+    background: rgb(var(--color-background-rgb) / 0.97);
+  }
+
+  .header[data-group-background] .menu-drawer__nav-buttons,
+  .header[data-group-background] .menu-drawer__store-info {
+    background: rgb(var(--color-background-rgb) / var(--opacity-90));
+  }
+
+  .header[data-group-background] .menu-drawer__store-info {
+    padding-inline: var(--padding-md);
+    margin-inline-end: var(--margin-md);
+    border-radius: var(--style-border-radius-popover);
+  }
+
+  .header[data-group-background] .menu-drawer__menu-item {
+    color: var(--color-foreground);
+    border-radius: var(--style-border-radius-buttons-primary);
+  }
+
+  .header[data-group-background] .menu-drawer__menu-item:is(:hover, [aria-current='page']),
+  .header[data-group-background] details[open] > summary.menu-drawer__menu-item {
+    background: rgb(var(--color-foreground-rgb) / var(--opacity-5));
   }
 
   .menu-drawer__back-button > .svg-wrapper {

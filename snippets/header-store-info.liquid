@@ -1,0 +1,30 @@
+{% doc %}
+  Displays the branded header's address and hours inside the mobile drawer.
+  @param {object} settings - Header section settings
+  @example
+  {% render 'header-store-info', settings: section.settings %}
+{% enddoc %}
+
+{% if settings.brand_header %}
+  {% if settings.brand_left_text != blank or settings.brand_right_text != blank %}
+    <div class="menu-drawer__store-info">
+      {% if settings.brand_left_text != blank %}<div>{{ settings.brand_left_text }}</div>{% endif %}
+      {% if settings.brand_right_text != blank %}<div>{{ settings.brand_right_text }}</div>{% endif %}
+    </div>
+  {% endif %}
+{% endif %}
+
+{% stylesheet %}
+  .menu-drawer__store-info {
+    display: grid;
+    gap: var(--gap-lg);
+    padding-block: var(--padding-lg);
+    padding-inline-end: var(--padding-xl);
+    font-size: var(--font-size--sm);
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+  }
+
+  .menu-drawer__store-info p { margin-block: 0; }
+  .menu-drawer__store-info p + p { margin-block-start: var(--margin-xs); }
+{% endstylesheet %}

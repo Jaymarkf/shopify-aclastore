@@ -12,8 +12,13 @@
   @param {string} [localization] - Captured HTML for language/country selector
   @param {string} [search] - Captured HTML for search input
   @param {string} [drawer_search] - Captured HTML for drawer-based search
+  @param {string} [brand_left] - Optional rich text beside the logo in the branding layout
+  @param {string} [brand_right] - Optional rich text beside the logo, below the actions
 {% enddoc %}
 
+{% if settings.brand_header and row == 'top' %}
+  {% render 'header-brand-row', settings: settings, logo: logo, first: first, search: search, drawer_search: drawer_search, localization: localization, actions: actions %}
+{% else %}
 {%- liquid
   assign order = order | split: ','
   assign left = ''
@@ -29,6 +34,13 @@
     assign row_key = item | append: '_row'
     assign item_row = settings[row_key] | default: 'top'
     assign item_column = settings[column_key] | default: 'left'
+    if settings.brand_header
+      if item == 'logo'
+        assign item_column = 'center'
+      elsif item == 'menu'
+        assign item_row = 'bottom'
+      endif
+    endif
 
     case item
       when 'actions'
@@ -89,6 +101,14 @@
           {% endcase %}
         {% endunless %}
       {% endfor %}
+      {% if settings.brand_header and row == 'top' %}
+        {% if column == 'left' and brand_left != blank %}
+          <div class="header__brand-info header__brand-info--left">{{ brand_left }}</div>
+        {% elsif column == 'right' and brand_right != blank %}
+          <div class="header__brand-info header__brand-info--right">{{ brand_right }}</div>
+        {% endif %}
+      {% endif %}
     </div>
   {%- endif -%}
 {%- endfor -%}
+{% endif %}

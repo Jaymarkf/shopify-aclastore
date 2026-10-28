@@ -1,0 +1,22 @@
+{% doc %}
+  A Category tile's native slide, including its own theme-editor wrapper.
+  Initial visibility is recalculated by the slideshow from the saved DOM order.
+  @example
+  <!-- Category tiles > Category tile > Add block > Image slide -->
+{% enddoc %}
+{% render 'acla-category-tile-styles' %}
+{% if block.settings.image != blank or request.design_mode %}
+  {% capture media %}{% render 'acla-category-tile-media', image: block.settings.image, link: block.settings.link %}{% endcapture %}
+  {% render 'slideshow-slide', children: media, index: 0, slide_id: block.id, class: 'acla-category-tile__slide acla-category-tile__nested-slide', attributes: block.shopify_attributes %}
+{% endif %}
+{% schema %}
+{
+  "name": "t:acla_category_tiles.slide_name",
+  "tag": null,
+  "settings": [
+    { "type": "image_picker", "id": "image", "label": "t:settings.image" },
+    { "type": "url", "id": "link", "label": "t:settings.link" }
+  ],
+  "presets": [{ "name": "t:acla_category_tiles.slide_name" }]
+}
+{% endschema %}

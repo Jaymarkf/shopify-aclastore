@@ -28,7 +28,7 @@
     </span>
 
     <span
-      class="svg-wrapper {% if display_style != 'icon' %}desktop:hidden{% endif %}"
+      class="svg-wrapper {% if display_style != 'icon' and section.settings.brand_header != true %}desktop:hidden{% endif %}"
       aria-hidden="true"
     >
       {{ 'icon-cart.svg' | inline_asset_content }}
@@ -63,6 +63,10 @@
   {% endif %}
   {{- block.shopify_attributes -}}
 >
+  {% if section.settings.brand_header %}
+    {% assign brand_accent_id = 'header-accent-' | append: section.id %}
+    {% render 'contrast-override', background_color: section.settings.brand_accent_background, text_color: section.settings.brand_accent_text, section_id: brand_accent_id, preset: 'ui' %}
+  {% endif %}
   {% if shop.customer_accounts_enabled %}
     {% liquid
       assign account_actions_style = ''
@@ -98,7 +102,7 @@
             slot="signed-out-avatar"
             class="account-button__text header-actions__text-style {% if display_style == 'icon' %}hidden{% else %}mobile:hidden{% endif %}"
           >
-            {{ 'content.account_title' | t }}
+            {% if section.settings.brand_header %}{{ 'acla_header.sign_in_register' | t }}{% else %}{{ 'content.account_title' | t }}{% endif %}
           </span>
 
           <span
@@ -115,7 +119,7 @@
 
   {% if settings.cart_type == 'drawer' and template.name != 'cart' %}
     <button
-      class="header-actions__action button-unstyled{% if display_style == 'text' %} header-actions__text-style{% endif %}"
+      class="header-actions__action button-unstyled{% if section.settings.brand_header %} header-brand__cart color-custom-{{ brand_accent_id }}{% endif %}{% if display_style == 'text' %} header-actions__text-style{% endif %}"
       on:click="#cart-drawer/toggle"
       aria-haspopup="dialog"
       aria-expanded="false"
@@ -129,7 +133,7 @@
   {% else %}
     <a
       href="{{ routes.cart_url }}"
-      class="header-actions__action action__cart{% if display_style == 'text' %} header-actions__text-style{% endif %}"
+      class="header-actions__action action__cart{% if section.settings.brand_header %} header-brand__cart color-custom-{{ brand_accent_id }}{% endif %}{% if display_style == 'text' %} header-actions__text-style{% endif %}"
       aria-label="{{ 'accessibility.cart' | t }}"
       aria-describedby="cart-bubble-text"
     >

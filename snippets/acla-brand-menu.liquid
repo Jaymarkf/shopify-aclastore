@@ -1,9 +1,7 @@
 {% doc %}
-  Renders native menu children as brands with nested family panels on desktop.
-
-  @param {object} parent_link - Native menu item containing the brands
-  @param {string} menu_id - Unique ID prefix for the panels
-
+  Native menu categories in a horizontal row with selected children in a grid below.
+  @param {object} parent_link - Native menu item containing the categories
+  @param {string} menu_id - Unique prefix for the panels
   @example
   {% render 'acla-brand-menu', parent_link: link, menu_id: list_id %}
 {% enddoc %}
@@ -12,63 +10,150 @@
 <acla-brand-menu class="acla-brand-menu">
   <ul class="acla-brand-menu__brands list-unstyled">
     {% for brand_link in parent_link.links %}
-      <li class="acla-brand-menu__brand" data-brand-index="{{ forloop.index0 }}" on:pointerenter="/openBrand">
-        <div class="acla-brand-menu__trigger">
-          <a href="{{ brand_link.url }}" class="mega-menu__link mega-menu__link--parent">{{ brand_link.title | escape }}</a>
-          {% if brand_link.links != blank %}
-            <button
-              class="button-unstyled acla-brand-menu__toggle"
-              type="button"
-              ref="toggles[]"
-              aria-expanded="false"
-              aria-controls="{{ menu_id }}-Brand-{{ forloop.index }}"
-              on:click="/toggleBrand"
-            >
-              <span class="visually-hidden">{{ 'acla_navigation.show_brand' | t: brand: brand_link.title | escape }}</span>
-              <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" aria-hidden="true"><path d="m6 3 5 5-5 5"/></svg>
-            </button>
-          {% endif %}
-        </div>
+      <li class="acla-brand-menu__brand">
         {% if brand_link.links != blank %}
-          <ul class="acla-brand-menu__families list-unstyled" id="{{ menu_id }}-Brand-{{ forloop.index }}" ref="panels[]" hidden>
-            {% for family_link in brand_link.links %}
-              <li><a href="{{ family_link.url }}" class="mega-menu__link">{{ family_link.title | escape }}</a></li>
-            {% endfor %}
-          </ul>
+          <button
+            class="button-unstyled acla-brand-menu__toggle"
+            type="button"
+            ref="toggles[]"
+            aria-expanded="false"
+            aria-controls="{{ menu_id }}-Brand-{{ forloop.index }}"
+            on:click="/toggleBrand"
+          >
+            <span>{{ brand_link.title | escape }}</span>
+            <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" aria-hidden="true"><path d="m3 6 5 5 5-5"/></svg>
+          </button>
+        {% else %}
+          <a href="{{ brand_link.url }}" class="acla-brand-menu__category-link">{{ brand_link.title | escape }}</a>
         {% endif %}
       </li>
     {% endfor %}
+    <li class="acla-brand-menu__overview">
+      <a href="{{ parent_link.url }}">{{ 'acla_navigation.view_all' | t: title: parent_link.title | escape }} <span aria-hidden="true">↗</span></a>
+    </li>
   </ul>
+  {% for brand_link in parent_link.links %}
+    {% if brand_link.links != blank %}
+      <div class="acla-brand-menu__panel" id="{{ menu_id }}-Brand-{{ forloop.index }}" ref="panels[]" hidden>
+        <ul class="acla-brand-menu__families list-unstyled">
+          <li><a href="{{ brand_link.url }}" class="acla-brand-menu__view-all">{{ 'acla_navigation.view_all' | t: title: brand_link.title | escape }} <span aria-hidden="true">↗</span></a></li>
+          {% for family_link in brand_link.links %}
+            <li><a href="{{ family_link.url }}"{% if family_link.current %} aria-current="page"{% endif %}>{{ family_link.title | escape }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+  {% endfor %}
 </acla-brand-menu>
 
 {% stylesheet %}
   .acla-brand-menu {
-    --acla-brand-column: min(240px, 35%);
     display: block;
-    position: relative;
     grid-column: 1 / -1;
+    inline-size: 100%;
     min-inline-size: 0;
-    min-block-size: max(100px, var(--acla-brand-panel-height, 0px));
-    padding-inline-end: var(--padding-lg);
+    margin-block: var(--margin-xs);
+    padding: clamp(12px, 1.4vw, 22px);
+    border: 1px solid rgb(var(--color-foreground-rgb) / var(--opacity-10));
+    border-radius: var(--style-border-radius-popover);
+    background: rgb(var(--color-background-rgb) / 0.97);
+    color: var(--color-foreground);
+    box-shadow: 0 8px 28px rgb(var(--color-foreground-rgb) / var(--opacity-10));
   }
-  .acla-brand-menu__brands { inline-size: var(--acla-brand-column); }
-  .acla-brand-menu__trigger { display: flex; align-items: center; min-inline-size: 0; }
-  .acla-brand-menu__trigger > a { flex: 1; overflow-wrap: anywhere; padding: var(--padding-sm); }
-  .acla-brand-menu__toggle { display: grid; place-items: center; inline-size: 44px; min-block-size: 44px; color: inherit; }
-  .acla-brand-menu__toggle svg { transition: transform var(--animation-speed) var(--animation-easing); }
-  .acla-brand-menu__toggle[aria-expanded='true'] svg { transform: rotate(90deg); }
-  .acla-brand-menu__brand:has([aria-expanded='true']) > .acla-brand-menu__trigger { background: rgb(var(--color-foreground-rgb) / var(--opacity-5)); }
+
+  .acla-brand-menu__brands {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--gap-sm);
+    min-inline-size: 0;
+  }
+
+  .acla-brand-menu__brand { min-inline-size: 0; }
+
+  .acla-brand-menu__toggle,
+  .acla-brand-menu__category-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap-xl);
+    min-inline-size: 120px;
+    min-block-size: var(--minimum-touch-target);
+    max-inline-size: 100%;
+    padding: var(--padding-sm) var(--padding-md);
+    border-radius: var(--style-border-radius-buttons-primary);
+    color: var(--color-foreground);
+    font-family: var(--menu-parent-font-family);
+    font-size: var(--menu-parent-font-size);
+    font-weight: var(--menu-parent-font-weight);
+    text-decoration: none;
+    text-align: start;
+    overflow-wrap: anywhere;
+    transition: background-color var(--animation-speed) var(--animation-easing);
+  }
+
+  .acla-brand-menu__toggle:hover,
+  .acla-brand-menu__category-link:hover,
+  .acla-brand-menu__toggle[aria-expanded='true'] {
+    background: rgb(var(--color-foreground-rgb) / var(--opacity-10));
+  }
+
+  .acla-brand-menu__toggle[aria-expanded='true'] { box-shadow: inset 0 -2px 0 currentColor; }
+
+  .acla-brand-menu__toggle svg { flex: 0 0 16px; transition: transform var(--animation-speed) var(--animation-easing); }
+  .acla-brand-menu__toggle[aria-expanded='true'] svg { transform: rotate(180deg); }
+  .acla-brand-menu__overview { margin-inline-start: auto; }
+
+  .acla-brand-menu__overview a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--gap-xs);
+    min-block-size: var(--minimum-touch-target);
+    padding-inline: var(--padding-sm);
+    color: inherit;
+    font-size: var(--font-size--sm);
+    text-underline-offset: 4px;
+    overflow-wrap: anywhere;
+  }
+
+  .acla-brand-menu__panel {
+    margin-block-start: var(--margin-sm);
+    padding-block-start: var(--padding-md);
+    border-block-start: 1px solid rgb(var(--color-foreground-rgb) / var(--opacity-10));
+  }
+
+  .acla-brand-menu__panel[hidden] { display: none; }
+
   .acla-brand-menu__families {
-    position: absolute;
-    inset-block-start: 0;
-    inset-inline-start: calc(var(--acla-brand-column) + var(--padding-lg));
-    inset-inline-end: 0;
-    padding-inline-start: var(--padding-lg);
-    border-inline-start: 1px solid var(--color-border);
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+    gap: var(--gap-xs) var(--gap-md);
     min-inline-size: 0;
   }
-  .acla-brand-menu__families[hidden] { display: none; }
-  .acla-brand-menu__families a { display: block; padding: var(--padding-sm); overflow-wrap: anywhere; }
+
+  .acla-brand-menu__families li { min-inline-size: 0; }
+
+  .acla-brand-menu__families a {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-xs);
+    min-block-size: var(--minimum-touch-target);
+    block-size: 100%;
+    padding: var(--padding-sm);
+    border-radius: var(--style-border-radius-buttons-primary);
+    color: var(--color-foreground);
+    font-family: var(--menu-child-font-family);
+    font-size: var(--menu-child-font-size);
+    line-height: 1.45;
+    text-decoration: none;
+    white-space: normal;
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+    transition: background-color var(--animation-speed) var(--animation-easing);
+  }
+
+  .acla-brand-menu__families a:is(:hover, [aria-current='page']) { background: rgb(var(--color-foreground-rgb) / var(--opacity-5)); }
+  .acla-brand-menu__view-all { font-weight: 650; text-decoration: underline; text-underline-offset: 4px; }
   .acla-brand-menu :is(a, button):focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
-  @media (prefers-reduced-motion: reduce) { .acla-brand-menu__toggle svg { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .acla-brand-menu :is(a, button, svg) { transition: none; } }
 {% endstylesheet %}

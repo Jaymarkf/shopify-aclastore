@@ -1,6 +1,7 @@
 {%- doc -%}
-  This snippet is used to render a product card.
-  It is used in the product block,featured product block, and the product card block.
+  Shared product pricing for product pages, cards, search, and recommendations.
+  Family summaries use assigned items through the existing savings component;
+  individual products retain their selected variant and volume pricing.
 
   @param {product} product_resource - The product to render
   @param {boolean} [show_unit_price] - Whether to show the unit price
@@ -8,8 +9,10 @@
 {%- enddoc -%}
 
 {% render 'price-styles' %}
+{% capture family_count %}{% render 'acla-group-count', product_resource: product_resource %}{% endcapture %}
 
 {%- liquid
+  assign family_count = family_count | plus: 0
   assign show_unit_price = show_unit_price | default: false
   assign show_sale_price_first = show_sale_price_first | default: false
   assign selected_variant = product_resource.selected_or_first_available_variant
@@ -77,7 +80,9 @@
 {% capture list_price_markup %}
   <span class="price-item__group acla-price-line">
     <span class="acla-price-label">{{ 'acla_pricing.msrp' | t }}</span>
-    {% if selected_variant.compare_at_price > 0 %}
+    {% if family_count > 0 %}
+      <bdi data-family-card-msrp aria-busy="true" aria-label="{{ 'acla_family.loading_options' | t | escape }}">…</bdi>
+    {% elsif selected_variant.compare_at_price > 0 %}
       <bdi{% if show_compare_price %} class="compare-at-price"{% endif %}>{{ compare_at_price }}</bdi>
     {% else %}
       <span>{{ 'acla_pricing.not_listed' | t }}</span>
@@ -87,14 +92,24 @@
 {% capture selling_price_markup %}
   <span class="price-item__group price acla-price-line">
     <span class="acla-price-label">{{ 'acla_pricing.selling_price' | t }}</span>
+    {% if family_count > 0 %}<span data-family-card-from hidden>{{ 'acla_family.from' | t }}</span> {% endif %}
     {% if has_volume_pricing %}
-      <bdi>{{ price_min }} - {{ price_max }}</bdi>
+      <bdi{% if family_count > 0 %} data-family-card-selling{% endif %}>{{ price_min }} - {{ price_max }}</bdi>
     {% else %}
-      <bdi>{{ price | default: '&nbsp;' }}</bdi>
+      <bdi{% if family_count > 0 %} data-family-card-selling{% endif %}>{{ price | default: '&nbsp;' }}</bdi>
     {% endif %}
   </span>
 {% endcapture %}
-<div ref="priceContainer">
+<div ref="priceContainer"
+  {% if family_count > 0 %}
+    data-family-price-summary
+    data-price-currency="{{ localization.country.currency.iso_code }}"
+    data-price-locale="{{ request.locale.iso_code }}"
+    data-price-currency-code="{{ use_currency }}"
+    data-msrp-unavailable="{{ 'acla_pricing.not_listed' | t | escape }}"
+    data-msrp-fallback="{{ 'acla_family.view_options' | t | escape }}"
+  {% endif %}
+>
   {% if show_sale_price_first %}
     {{ selling_price_markup }}{{ list_price_markup }}
   {% else %}

@@ -138,7 +138,7 @@
     endif
   endif
   capture search
-    render 'search', style: search_style, class: search_class, display_style: section.settings.actions_display_style
+    render 'search', style: search_style, class: search_class, display_style: section.settings.actions_display_style, with_icon: section.settings.brand_header
   endcapture
 
   # Skip drawer search under specific conditions:
@@ -152,7 +152,7 @@
   if section.settings.search_row == 'bottom' or search_style != 'none' and skip_drawer_search == false
     # Mobile search duplicate for when search is not in the right order for mobile layout
     capture drawer_search
-      render 'search', class: 'search-action--hidden-on-menu', style: search_style, display_style: section.settings.actions_display_style
+      render 'search', class: 'search-action--hidden-on-menu', style: search_style, display_style: section.settings.actions_display_style, with_icon: section.settings.brand_header
     endcapture
   endif
 
@@ -167,8 +167,12 @@
   endif
 
   assign bottom_row_blocks = ''
+  assign header_menu_row = section.settings.menu_row
+  if section.settings.brand_header
+    assign header_menu_row = 'bottom'
+  endif
 
-  if section.settings.menu_row == 'bottom'
+  if header_menu_row == 'bottom'
     assign bottom_row_blocks = bottom_row_blocks | append: 'menu,'
   endif
 
@@ -200,6 +204,9 @@
   endif
 
   assign class = 'header'
+  if section.settings.brand_header
+    assign class = class | append: ' header--brand'
+  endif
 
   if header_height_class
     assign class = class | append: ' ' | append: header_height_class
@@ -373,7 +380,7 @@
   {% endif %}
   data-skip-node-update
   data-scroll-direction="none"
-  {% if section.settings.menu_row == 'top' and bottom_row_blocks.size > 0 %}
+  {% if header_menu_row == 'top' and bottom_row_blocks.size > 0 %}
     data-submenu-overlap-bottom-row
   {% endif %}
   {% if background_transparent_color_value %}
@@ -385,6 +392,9 @@
   style="
     --color-background-top-row: rgba({{ section.settings.background_color_top.rgba | default: settings.page_background_color.rgba }});
     --color-background-bottom-row: rgba({{ section.settings.background_color_bottom.rgba | default: settings.page_background_color.rgba }});
+    --brand-header-height: {{ section.settings.brand_row_height | default: 170 }}px;
+    --brand-campaign-width: {{ section.settings.brand_campaign_width | default: 720 }}px;
+    --brand-corner-logo-width: {{ section.settings.brand_corner_logo_width | default: 280 }}px;
     {% if transparent and text_color_transparent != blank %}
       --color-transparent-text: {{ text_color_transparent }};
       --color-transparent-text-rgb: {{ text_color_transparent.rgb }};
@@ -504,7 +514,9 @@
         actions: actions,
         localization: localization_markup,
         search: search,
-        drawer_search: drawer_search
+        drawer_search: drawer_search,
+        brand_left: section.settings.brand_left_text,
+        brand_right: section.settings.brand_right_text
       %}
     {% endcapture %}
 
@@ -1388,9 +1400,103 @@
       "content": "t:content.logo"
     },
     {
+      "type": "checkbox",
+      "id": "brand_header",
+      "label": "t:acla_brand_header.layout",
+      "default": false,
+      "info": "t:acla_brand_header.layout_help"
+    },
+    {
+      "type": "range",
+      "id": "brand_row_height",
+      "label": "t:acla_brand_header.row_height",
+      "min": 120,
+      "max": 280,
+      "step": 10,
+      "unit": "px",
+      "default": 170,
+      "visible_if": "{{ section.settings.brand_header }}"
+    },
+    {
+      "type": "image_picker",
+      "id": "brand_campaign_image",
+      "label": "t:acla_brand_header.campaign_image",
+      "info": "t:acla_brand_header.campaign_help",
+      "visible_if": "{{ section.settings.brand_header }}"
+    },
+    {
+      "type": "checkbox",
+      "id": "brand_use_included_promo",
+      "label": "t:acla_brand_header.included_promo",
+      "info": "t:acla_brand_header.included_promo_help",
+      "default": false,
+      "visible_if": "{{ section.settings.brand_header and section.settings.brand_campaign_image == blank }}"
+    },
+    {
+      "type": "url",
+      "id": "brand_campaign_link",
+      "label": "t:acla_brand_header.campaign_link",
+      "visible_if": "{{ section.settings.brand_header }}"
+    },
+    {
+      "type": "text",
+      "id": "brand_campaign_alt",
+      "label": "t:acla_brand_header.campaign_alt",
+      "visible_if": "{{ section.settings.brand_header }}"
+    },
+    {
+      "type": "range",
+      "id": "brand_campaign_width",
+      "label": "t:acla_brand_header.campaign_width",
+      "min": 320,
+      "max": 960,
+      "step": 20,
+      "unit": "px",
+      "default": 720,
+      "visible_if": "{{ section.settings.brand_header }}"
+    },
+    {
+      "type": "range",
+      "id": "brand_corner_logo_width",
+      "label": "t:acla_brand_header.corner_logo_width",
+      "min": 160,
+      "max": 360,
+      "step": 10,
+      "unit": "px",
+      "default": 280,
+      "visible_if": "{{ section.settings.brand_header }}"
+    },
+    {
+      "type": "color",
+      "id": "brand_accent_background",
+      "label": "t:acla_brand_header.accent_background",
+      "default": "#007d9b",
+      "visible_if": "{{ section.settings.brand_header }}"
+    },
+    {
+      "type": "color",
+      "id": "brand_accent_text",
+      "label": "t:acla_brand_header.accent_text",
+      "default": "#ffffff",
+      "visible_if": "{{ section.settings.brand_header }}"
+    },
+    {
+      "type": "richtext",
+      "id": "brand_left_text",
+      "label": "t:acla_brand_header.left_text",
+      "visible_if": "{{ section.settings.brand_header }}"
+    },
+    {
+      "type": "richtext",
+      "id": "brand_right_text",
+      "label": "t:acla_brand_header.right_text",
+      "visible_if": "{{ section.settings.brand_header }}"
+    },
+    {
       "type": "select",
       "id": "logo_position",
       "label": "t:settings.position",
+      "visible_if": "{{ section.settings.brand_header == false }}",
       "options": [
         {
           "value": "left",
@@ -1434,6 +1540,7 @@
     {
       "type": "select",
       "id": "menu_row",
+      "visible_if": "{{ section.settings.brand_header == false }}",
       "label": "t:settings.row",
       "options": [
         {

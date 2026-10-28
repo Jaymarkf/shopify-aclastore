@@ -27,6 +27,12 @@ const HOVER_COMMIT_DELAY_MS = 150;
 class HeaderMenu extends Component {
   requiredRefs = ['overflowMenu'];
 
+  #controller;
+
+  get clickOnly() {
+    return this.dataset.activation === 'click';
+  }
+
   /** @type {SubmenuMeasurement | null} */
   #submenuMeasurement = null;
 
@@ -47,6 +53,10 @@ class HeaderMenu extends Component {
   connectedCallback() {
     super.connectedCallback();
 
+    this.#controller = new AbortController();
+    document.addEventListener('pointerdown', this.#onOutsidePress, { signal: this.#controller.signal });
+    document.addEventListener('focusin', this.#onOutsideFocus, { signal: this.#controller.signal });
+
     onDocumentLoaded(this.#preloadImages);
     window.addEventListener('resize', this.#resizeListener);
     this.addEventListener('keydown', this.#onKeydown);
@@ -59,6 +69,7 @@ class HeaderMenu extends Component {
 
   disconnectedCallback() {
     super.disconnectedCallback();
+    this.#controller?.abort();
     window.removeEventListener('resize', this.#resizeListener);
     this.removeEventListener('keydown', this.#onKeydown);
     document.body.removeEventListener('pointermove', this.#onPointerMove);
@@ -71,6 +82,21 @@ class HeaderMenu extends Component {
     this.#hoverDispatchTimer = undefined;
   }
 
+  updatedCallback() {
+    super.updatedCallback();
+    this.#deactivate(this.#state.activeItem, { force: true });
+  }
+
+  /** @param {PointerEvent} event */
+  #onOutsidePress = (event) => {
+    if (this.clickOnly && !event.composedPath().includes(this)) this.#deactivate(this.#state.activeItem, { force: true });
+  };
+
+  /** @param {FocusEvent} event */
+  #onOutsideFocus = (event) => {
+    if (this.clickOnly && !event.composedPath().includes(this)) this.#deactivate(this.#state.activeItem, { force: true });
+  };
+
   /**
    * Debounced resize event listener to recalculate menu style
    */
@@ -79,6 +105,7 @@ class HeaderMenu extends Component {
   }, 100);
 
   #overflowSubmenuListener = () => {
+    if (this.clickOnly) return;
     this.#deactivate();
   };
 
@@ -87,6 +114,15 @@ class HeaderMenu extends Component {
    * @param {KeyboardEvent} event
    */
   #onKeydown = (event) => {
+    if (event.key === 'ArrowDown' && this.clickOnly && event.target instanceof Element) {
+      const button = event.target.closest('[ref="menuitem"]');
+      if (button instanceof HTMLButtonElement && button.hasAttribute('aria-controls')) {
+        event.preventDefault();
+        this.activate(event);
+        findSubmenu(button)?.querySelector('a, button')?.focus();
+        return;
+      }
+    }
     if (event.key !== 'Escape') return;
     const item = this.#state.activeItem;
     if (!item) return;
@@ -219,6 +255,7 @@ class HeaderMenu extends Component {
    * @param {HTMLElement | null} previousItem
    */
   #startPointerTracking(item, previousItem) {
+    if (this.clickOnly) return;
     if (previousItem) {
       this.#stopPointerTracking(previousItem);
     } else {
@@ -276,6 +313,7 @@ class HeaderMenu extends Component {
    */
   activate = (event) => {
     if (!(event.target instanceof Element) || !this.headerComponent) return;
+    if (this.clickOnly && (event.type.startsWith('pointer') || event.type === 'focus')) return;
 
     const item = findMenuItem(event.target);
 
@@ -286,7 +324,7 @@ class HeaderMenu extends Component {
     const slot = listItem instanceof HTMLElement ? listItem.slot : '';
     const isMoreTrigger = slot === 'more';
     const isDefaultSlot = slot === '';
-    const overflowItem = isMoreTrigger ? this.#getFirstOverflowMenuItem() : null;
+    const overflowItem = isMoreTrigger && !this.clickOnly ? this.#getFirstOverflowMenuItem() : null;
 
     this.dataset.overflowExpanded = (!isDefaultSlot).toString();
 
@@ -298,7 +336,10 @@ class HeaderMenu extends Component {
     if (previouslyActiveItem) {
       this.#expandableFor(previouslyActiveItem).ariaExpanded = 'false';
       const previousSubmenu = findSubmenu(previouslyActiveItem);
-      if (previousSubmenu) previousSubmenu.inert = true;
+      if (previousSubmenu) {
+        previousSubmenu.inert = true;
+        previousSubmenu.querySelectorAll('acla-brand-menu').forEach(menu => menu.closeBrands?.());
+      }
     }
     if (previouslyActiveOverflowItem && previouslyActiveOverflowItem !== previouslyActiveItem) {
       this.#expandableFor(previouslyActiveOverflowItem).ariaExpanded = 'false';
@@ -310,6 +351,10 @@ class HeaderMenu extends Component {
     this.#state.activeOverflowItem = overflowItem;
     this.ariaExpanded = 'true';
     this.#expandableFor(item).ariaExpanded = 'true';
+    if (this.clickOnly) {
+      const moreButton = this.querySelector('[slot="more"] [ref="menuitem"]');
+      if (moreButton instanceof HTMLElement) moreButton.ariaExpanded = (!isDefaultSlot).toString();
+    }
     if (overflowItem && overflowItem !== item) {
       this.#expandableFor(overflowItem).ariaExpanded = 'true';
       // The More trigger auto-opens the first overflow item's submenu, so expose it.
@@ -329,7 +374,7 @@ class HeaderMenu extends Component {
       clearTimeout(this.#hoverDispatchTimer);
       this.#hoverDispatchTimer = undefined;
       const committedItem = item;
-      if (event instanceof FocusEvent) {
+      if (this.clickOnly || event instanceof FocusEvent) {
         this.dispatchEvent(new MegaMenuHoverEvent());
       } else {
         this.#hoverDispatchTimer = setTimeout(() => {
@@ -365,6 +410,7 @@ class HeaderMenu extends Component {
    * @param {PointerEvent | FocusEvent} event
    */
   deactivate(event) {
+    if (this.clickOnly) return;
     if (!(event.target instanceof Element)) return;
 
     const menu = findSubmenu(this.#state.activeItem);
@@ -420,6 +466,11 @@ class HeaderMenu extends Component {
     this.#state.activeOverflowItem = null;
     this.ariaExpanded = 'false';
     this.#expandableFor(item).ariaExpanded = 'false';
+    if (this.clickOnly) {
+      const moreButton = this.querySelector('[slot="more"] [ref="menuitem"]');
+      if (moreButton instanceof HTMLElement) moreButton.ariaExpanded = 'false';
+      this.querySelectorAll('acla-brand-menu').forEach(menu => menu.closeBrands?.());
+    }
     if (activeOverflowItem && activeOverflowItem !== item) {
       this.#expandableFor(activeOverflowItem).ariaExpanded = 'false';
       const activeOverflowSubmenu = findSubmenu(activeOverflowItem);

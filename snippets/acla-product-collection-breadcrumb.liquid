@@ -1,0 +1,60 @@
+{% doc %}
+  Renders a collection link from the product's memberships and native navigation.
+  An explicit collection > product menu relationship takes priority. Direct URLs
+  otherwise use a matching brand membership, a menu collection, then URL context.
+  No collection names or product handles are fixed in this snippet.
+
+  @param {product} product_resource - Product whose collection trail is rendered.
+  @param {linklist} [navigation_menu] - Menu used for product grouping.
+  @param {collection} [context_collection] - Collection in the current product URL.
+  @example
+  {% render 'acla-product-collection-breadcrumb', product_resource: product, navigation_menu: section.settings.breadcrumb_menu, context_collection: collection %}
+{% enddoc %}
+{%- liquid
+  assign navigation_links = navigation_menu.links
+  for root_link in navigation_menu.links
+    assign navigation_links = navigation_links | concat: root_link.links
+    for child_link in root_link.links
+      assign navigation_links = navigation_links | concat: child_link.links
+    endfor
+  endfor
+
+  # Only use collections the product actually belongs to, never a campaign
+  # inferred from its title or an unrelated navigation link.
+  for navigation_link in navigation_links
+    if navigation_link.type == 'collection_link'
+      assign membership = product_resource.collections | where: 'id', navigation_link.object.id | first
+      if membership != blank
+        assign menu_collection = membership
+        for product_link in navigation_link.links
+          if product_link.type == 'product_link' and product_link.object.id == product_resource.id
+            assign explicit_collection = membership
+            break
+          endif
+        endfor
+      endif
+    endif
+    if explicit_collection != blank
+      break
+    endif
+  endfor
+
+  assign vendor_handle = product_resource.vendor | handleize
+  if vendor_handle != blank
+    for membership in product_resource.collections
+      assign title_handle = membership.title | handleize
+      if membership.handle == vendor_handle or title_handle == vendor_handle
+        assign brand_collection = membership
+        break
+      endif
+    endfor
+  endif
+
+  assign context_membership = product_resource.collections | where: 'id', context_collection.id | first
+  assign breadcrumb_collection = explicit_collection | default: brand_collection | default: menu_collection | default: context_membership
+-%}
+{%- if breadcrumb_collection != blank -%}
+  <a href="{{ breadcrumb_collection.url }}">{{ breadcrumb_collection.title | escape }}</a>
+{%- else -%}
+  <a href="{{ routes.all_products_collection_url }}">{{ 'acla_family.all_products' | t }}</a>
+{%- endif -%}

@@ -2,6 +2,8 @@
   Container-aligned category grid. Merchants arrange independent image/link blocks.
   @example Add Category tiles to Home page, then configure each Category tile.
 {% endcomment %}
+{% render 'acla-category-tile-styles' %}
+<script src="{{ 'acla-category-tile.js' | asset_url }}" type="module" fetchpriority="low"></script>
 {% capture tiles %}{% content_for 'blocks' %}{% endcapture %}
 {% if tiles contains 'data-category-tile' or request.design_mode %}
   <div
@@ -29,7 +31,6 @@
 {
   "name": "t:acla_category_tiles.section_name",
   "disabled_on": { "groups": ["header", "footer"] },
-  "max_blocks": 24,
   "blocks": [{ "type": "acla-category-tile" }],
   "settings": [
     { "type": "range", "id": "columns", "label": "t:settings.columns", "min": 1, "max": 4, "step": 1, "default": 3 },

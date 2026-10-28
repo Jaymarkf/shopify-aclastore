@@ -1,7 +1,15 @@
 
 
+{% doc %}
+  Editable header logo with optional local image and desktop/mobile widths.
+  @example Select Header > Logo in the theme editor to upload a replacement.
+{% enddoc %}
 {% liquid
   assign block_settings = block.settings
+  assign custom_logo = false
+  if block_settings.logo_image != blank or block_settings.use_included_logo
+    assign custom_logo = true
+  endif
   assign use_inverse_logo = false
 
   if section.settings.enable_transparent_header_home and template.name == 'index' and section.settings.home_inverse_logo == true
@@ -32,13 +40,15 @@
     data-hidden-on-home-page
   {% endif %}
   href="{{ routes.root_url }}"
-  class="size-style spacing-style header-logo"
+  class="size-style spacing-style header-logo{% if custom_logo %} header-logo--custom{% endif %}"
   style="
     {% render 'size-style', settings: block_settings %}
     {% render 'spacing-style', settings: block_settings %}
     --font-family: var(--font-body--family);
     --font-style: var(--font-body--style);
     --font-weight: 600;
+    --header-custom-logo-width: {{ block_settings.custom_logo_width | default: 520 }}px;
+    --header-custom-logo-width-mobile: {{ block_settings.custom_logo_width_mobile | default: 280 }}px;
   "
   {{ block.shopify_attributes }}
 >
@@ -51,6 +61,33 @@
     assign inverse_logo_style = '--header-logo-image-width: ' | append: inverse_logo_width | append: 'px;' | append: '--header-logo-image-width-mobile: ' | append: inverse_logo_width_mobile | append: 'px; --header-logo-image-height: ' | append: settings.logo_height | append: 'px; --header-logo-image-height-mobile: ' | append: settings.logo_height_mobile | append: 'px;'
   %}
 
+  {% if custom_logo %}
+    {% liquid
+      assign custom_alt = block_settings.logo_alt | default: block_settings.logo_image.alt | default: shop.name
+    %}
+    {% capture custom_logo_markup %}
+      {% if block_settings.logo_image != blank %}
+        {{ block_settings.logo_image | image_url: width: 1600 | image_tag: class: 'header-logo__image', widths: '320, 480, 640, 960, 1280, 1600', sizes: '(min-width: 750px) 44vw, 90vw', loading: 'eager', alt: custom_alt }}
+      {% else %}
+        <span class="header-logo__included-frame">
+          <picture>
+            <source type="image/webp" srcset="{{ 'carpediemmarkers-logo-900.webp' | asset_url }} 900w, {{ 'carpediemmarkers-logo-1800.webp' | asset_url }} 1800w" sizes="(min-width: 750px) min(44vw, {{ block_settings.custom_logo_width | default: 520 }}px), min(90vw, {{ block_settings.custom_logo_width_mobile | default: 280 }}px)">
+            <img class="header-logo__image" src="{{ 'carpediemmarkers-logo.png' | asset_url }}" width="2172" height="724" loading="eager" alt="{{ custom_alt | escape }}">
+          </picture>
+        </span>
+      {% endif %}
+    {% endcapture %}
+    <span class="header-logo__custom-image{% if use_inverse_logo %} header-logo__solid-header-image-container{% endif %}" data-testid="header-logo">{{ custom_logo_markup }}</span>
+    {% if use_inverse_logo %}
+      <span class="header-logo__custom-image header-logo__transparent-header-image-container" data-testid="header-logo-inverse">
+        {% if settings.logo_inverse != blank %}
+          {{ settings.logo_inverse | image_url: width: 1600 | image_tag: class: 'header-logo__image', widths: '320, 480, 640, 960, 1280, 1600', sizes: '(min-width: 750px) 44vw, 90vw', loading: 'eager', alt: custom_alt }}
+        {% else %}
+          {{ custom_logo_markup }}
+        {% endif %}
+      </span>
+    {% endif %}
+  {% else %}
   <span
     {% if use_inverse_logo %}
       class="header-logo__solid-header-image-container"
@@ -81,6 +118,7 @@
         style: inverse_logo_style
       %}
     </span>
+  {% endif %}
   {% endif %}
 </a>
 
@@ -140,6 +178,47 @@
   .header-logo__transparent-header-image-container {
     display: var(--header-logo-inverse-display, none);
   }
+
+  .header-logo--custom {
+    inline-size: min(var(--header-custom-logo-width), 44vw);
+    max-inline-size: 100%;
+    block-size: auto;
+    min-inline-size: 0;
+  }
+
+  .header-logo__custom-image {
+    inline-size: 100%;
+    max-inline-size: 100%;
+    min-inline-size: 0;
+  }
+
+  .header-logo--custom .header-logo__image {
+    display: block;
+    inline-size: 100%;
+    block-size: auto;
+    max-inline-size: 100%;
+  }
+
+  /* Frame the included PNG's transparent margins without changing its original pixels.
+     Uploaded logos retain their own intrinsic proportions. */
+  .header-logo__included-frame {
+    display: block;
+    position: relative;
+    aspect-ratio: 2172 / 385;
+    overflow: hidden;
+  }
+
+  .header-logo__included-frame .header-logo__image {
+    position: absolute;
+    inset-inline-start: 0;
+    inset-block-start: -37.4026%;
+  }
+
+  @media screen and (max-width: 749px) {
+    .header-logo--custom {
+      inline-size: var(--header-custom-logo-width-mobile);
+    }
+  }
 {% endstylesheet %}
 
 {% schema %}
@@ -149,8 +228,46 @@
   "class": "header-logo",
   "settings": [
     {
+      "type": "image_picker",
+      "id": "logo_image",
+      "label": "t:acla_brand_header.logo_image"
+    },
+    {
+      "type": "checkbox",
+      "id": "use_included_logo",
+      "label": "t:acla_brand_header.included_logo",
+      "default": false
+    },
+    {
+      "type": "text",
+      "id": "logo_alt",
+      "label": "t:acla_brand_header.logo_alt"
+    },
+    {
+      "type": "range",
+      "id": "custom_logo_width",
+      "label": "t:acla_brand_header.desktop_width",
+      "min": 200,
+      "max": 720,
+      "step": 20,
+      "unit": "px",
+      "default": 520,
+      "visible_if": "{{ block.settings.logo_image != blank or block.settings.use_included_logo }}"
+    },
+    {
+      "type": "range",
+      "id": "custom_logo_width_mobile",
+      "label": "t:acla_brand_header.mobile_width",
+      "min": 120,
+      "max": 320,
+      "step": 10,
+      "unit": "px",
+      "default": 280,
+      "visible_if": "{{ block.settings.logo_image != blank or block.settings.use_included_logo }}"
+    },
+    {
       "type": "paragraph",
-      "content": "t:content.edit_logo_in_theme_settings"
+      "content": "t:acla_brand_header.logo_help"
     },
     {
       "type": "header",

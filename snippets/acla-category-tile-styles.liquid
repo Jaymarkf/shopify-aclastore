@@ -1,0 +1,112 @@
+{% doc %}
+  Shared category tile and carousel styles. Rendered by the section, tile, and
+  nested slide so editor fragment updates retain all sizing and native controls.
+  @example
+  {% render 'acla-category-tile-styles' %}
+{% enddoc %}
+
+{% stylesheet %}
+  .acla-category-tile {
+    position: relative;
+    display: block;
+    min-inline-size: 0;
+    inline-size: 100%;
+    overflow: hidden;
+    isolation: isolate;
+    border: 1px solid rgb(var(--color-foreground-rgb) / var(--opacity-10));
+    border-radius: var(--acla-tile-radius, 12px);
+    background: var(--color-background);
+    color: var(--color-foreground);
+    text-decoration: none;
+  }
+
+  /* A normal-flow frame remains present while editor children are replaced. */
+  .acla-category-tile::before {
+    content: '';
+    display: block;
+    inline-size: 100%;
+    aspect-ratio: var(--acla-tile-ratio, 3 / 2);
+    pointer-events: none;
+  }
+
+  .acla-category-tile__content {
+    position: relative;
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    min-inline-size: 0;
+    color: inherit;
+    text-decoration: none;
+    overflow: hidden;
+  }
+
+  .acla-category-tile__content > :is(img, .acla-category-tile__placeholder) {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+    transition: transform calc(var(--animation-speed-slow) * 3) var(--animation-timing-hover);
+  }
+
+  a.acla-category-tile__content:is(:hover, :focus-visible) > img { transform: scale(1.035); }
+  .acla-category-tile__content:focus-visible { outline: var(--focus-outline-width) solid var(--color-foreground); outline-offset: -4px; }
+
+  .acla-category-tile__carousel,
+  .acla-category-tile__carousel > slideshow-container,
+  .acla-category-tile__carousel > slideshow-container > slideshow-slides,
+  .acla-category-tile__slide {
+    block-size: 100%;
+    min-inline-size: 0;
+  }
+
+  .acla-category-tile__slide { display: block; }
+
+  .acla-category-tile__carousel {
+    --slide-width: 100%;
+    position: absolute;
+    inset: 0;
+  }
+  .acla-category-tile:not([data-multiple-slides]) slideshow-arrows { display: none; }
+
+  .acla-category-tile:has(.acla-category-tile__fallback) { aspect-ratio: auto; }
+  .acla-category-tile:has(.acla-category-tile__fallback)::before { display: none; }
+  .acla-category-tile:has(.acla-category-tile__fallback) > .acla-category-tile__carousel { display: none; }
+  .acla-category-tile__fallback { display: grid; }
+  .acla-category-tile__fallback > .acla-category-tile__content { block-size: auto; aspect-ratio: var(--acla-tile-ratio, 3 / 2); }
+  .acla-category-tile__fallback > .acla-category-tile__slide { block-size: auto; aspect-ratio: var(--acla-tile-ratio, 3 / 2); }
+
+  .acla-category-tile__carousel > slideshow-container > slideshow-arrows {
+    padding-inline: var(--padding-2xs);
+  }
+
+  .acla-category-tile__carousel > slideshow-container > slideshow-arrows .slideshow-control {
+    inline-size: var(--minimum-touch-target);
+    block-size: var(--minimum-touch-target);
+    padding: 0;
+    opacity: 1;
+  }
+
+  .acla-category-tile__carousel > slideshow-container > slideshow-arrows .slideshow-control:disabled {
+    opacity: var(--opacity-30);
+    cursor: default;
+  }
+
+  .acla-category-tile__empty {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: var(--padding-sm);
+    color: var(--color-foreground);
+    background: var(--color-background);
+    text-align: center;
+    pointer-events: none;
+  }
+  .acla-category-tile:has(slideshow-slide img) > .acla-category-tile__empty { display: none; }
+  .acla-category-tile__editor-hint { position: absolute; inset: auto 12px 12px; padding: 8px; background: var(--color-background); color: var(--color-foreground); font-size: var(--font-size--xs); text-align: center; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .acla-category-tile__content > img { transition: none; }
+    a.acla-category-tile__content:is(:hover, :focus-visible) > img { transform: none; }
+  }
+{% endstylesheet %}

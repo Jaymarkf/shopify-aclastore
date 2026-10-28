@@ -55,6 +55,7 @@
   endif
 
   assign ratio = '1'
+  assign media_fit = block_settings.image_fit | default: 'cover'
   case block_settings.image_ratio
     when 'landscape'
       assign ratio = '16 / 9'
@@ -91,6 +92,7 @@
     data-view-transition-to-main-product
   {% endif %}
   data-image-ratio="{{ block_settings.image_ratio }}"
+  data-image-fit="{{ media_fit }}"
   {{ block.shopify_attributes }}
 >
   {%- if product.media.size > 0 -%}
@@ -255,6 +257,16 @@
     overflow: hidden;
     container-type: inline-size; /* Make card-gallery a container */
     container-name: card-gallery-container; /* Optional: name the container */
+  }
+
+  /* Contained images must stay inside fractional-width carousel cells, too. */
+  .card-gallery[data-image-fit='contain'] .product-media-container {
+    --slide-width: 100%;
+  }
+
+  .card-hover-effect-subtle-zoom .product-card:hover .card-gallery[data-image-fit='contain'],
+  :is(.card-hover-effect-scale, .card-hover-effect-lift) .product-card:has(.card-gallery[data-image-fit='contain']):hover {
+    transform: none;
   }
 
   @container (max-width: 70px) {

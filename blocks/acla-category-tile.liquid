@@ -1,101 +1,43 @@
 {% doc %}
-  A reusable category image with an optional destination link.
-  Settings: image and link. The image's library alt text names the link.
+  A category tile containing an optional first image/link and nested image slides.
+  A stable native carousel whose DOM is updated immediately by the theme editor.
+  The tile component handles unsaved slide additions, removals, and image changes.
   @example
   <!-- Add a Category tile block to Category tiles or a custom section. -->
 {% enddoc %}
-{% liquid
-  assign tile_image = block.settings.image
-  assign tile_tag = 'div'
-  if block.settings.link != blank
-    assign tile_tag = 'a'
-  endif
-  assign fallback_alt = 'acla_category_tiles.link_label' | t
-  if block.settings.link contains '/collections/'
-    assign category_handle = block.settings.link | split: '?' | first | split: '#' | first | split: '/' | last
-    assign linked_category = collections[category_handle]
-    if linked_category != blank
-      assign fallback_alt = linked_category.title
-    endif
-  endif
-  assign image_alt = tile_image.alt | default: fallback_alt
-%}
-{% if tile_image != blank or request.design_mode %}
-  <{{ tile_tag }}
-    class="acla-category-tile{% if block.settings.link != blank %} acla-category-tile--linked{% endif %}"
-    data-category-tile
-    {% if block.settings.link != blank %}href="{{ block.settings.link | escape }}"{% endif %}
-    {{ block.shopify_attributes }}
-  >
-    {% if tile_image != blank %}
-      {{ tile_image | image_url: width: 1280 | image_tag: loading: 'lazy', decoding: 'async', widths: '240, 360, 540, 720, 960, 1280', sizes: 'auto, (min-width: 990px) 33vw, 50vw', alt: image_alt }}
-    {% else %}
-      {{ 'collection-1' | placeholder_svg_tag: 'acla-category-tile__placeholder' }}
-      <span class="acla-category-tile__editor-hint">{{ 'acla_category_tiles.choose_image' | t }}</span>
+{% render 'acla-category-tile-styles' %}
+{% capture children %}{% content_for 'blocks' %}{% endcapture %}
+{% if block.settings.image != blank or children contains '<img' or request.design_mode %}
+  {% capture first_media %}
+    {% if block.settings.image != blank %}{% render 'acla-category-tile-media', image: block.settings.image, link: block.settings.link %}{% endif %}
+  {% endcapture %}
+  {% capture slides %}
+    {% if block.settings.image != blank %}
+      {% assign slide_id = block.id | append: '-first' %}
+      {% render 'slideshow-slide', children: first_media, index: 0, slide_id: slide_id, class: 'acla-category-tile__slide' %}
     {% endif %}
-    {% if block.settings.link != blank %}
-      <span class="acla-category-tile__arrow" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span>
-    {% endif %}
-  </{{ tile_tag }}>
+    {{ children }}
+  {% endcapture %}
+  <acla-category-tile class="acla-category-tile" data-category-tile {{ block.shopify_attributes }}>
+    {% capture carousel_attributes %}aria-label="{{ 'acla_category_tiles.slideshow' | t | escape }}"{% endcapture %}
+    {% render 'slideshow', slides: slides, slide_count: 0, class: 'acla-category-tile__carousel', attributes: carousel_attributes, show_arrows: true, animate_arrows: false, infinite: false, icon_style: 'arrow', icon_shape: 'circle' %}
+    {% if request.design_mode %}<span class="acla-category-tile__empty">{{ 'acla_category_tiles.choose_image' | t }}</span>{% endif %}
+    <noscript>
+      <div class="acla-category-tile__fallback">
+        {{ first_media }}
+        {{ children }}
+      </div>
+    </noscript>
+    <script src="{{ 'acla-category-tile.js' | asset_url }}" type="module" fetchpriority="low"></script>
+  </acla-category-tile>
 {% endif %}
-
-{% stylesheet %}
-  .acla-category-tile {
-    position: relative;
-    display: block;
-    min-inline-size: 0;
-    inline-size: 100%;
-    aspect-ratio: var(--acla-tile-ratio, 3 / 2);
-    overflow: hidden;
-    isolation: isolate;
-    border: 1px solid rgb(var(--color-foreground-rgb) / var(--opacity-10));
-    border-radius: var(--acla-tile-radius, 12px);
-    background: var(--color-background);
-    color: var(--color-foreground);
-    text-decoration: none;
-    transition: transform calc(var(--animation-speed-slow) * 2) var(--animation-timing-hover), box-shadow calc(var(--animation-speed-slow) * 2) var(--animation-timing-hover);
-  }
-
-  .acla-category-tile > :is(img, .acla-category-tile__placeholder) {
-    display: block;
-    inline-size: 100%;
-    block-size: 100%;
-    object-fit: cover;
-    transition: transform calc(var(--animation-speed-slow) * 3) var(--animation-timing-hover);
-  }
-
-  .acla-category-tile--linked:is(:hover, :focus-visible) { transform: translateY(-3px); box-shadow: var(--shadow-button); }
-  .acla-category-tile--linked:is(:hover, :focus-visible) > img { transform: scale(1.035); }
-  .acla-category-tile:focus-visible { outline: var(--focus-outline-width) solid var(--color-foreground); outline-offset: 4px; }
-
-  .acla-category-tile__arrow {
-    position: absolute;
-    inset-inline-end: 12px;
-    inset-block-end: 12px;
-    display: grid;
-    place-items: center;
-    inline-size: 36px;
-    block-size: 36px;
-    border-radius: 50%;
-    color: var(--color-foreground);
-    background: var(--color-background);
-    box-shadow: var(--shadow-button);
-  }
-
-  .acla-category-tile:dir(rtl) .acla-category-tile__arrow svg { transform: rotate(180deg); }
-  .acla-category-tile__editor-hint { position: absolute; inset: auto 12px 12px; padding: 8px; background: var(--color-background); color: var(--color-foreground); font-size: var(--font-size--xs); text-align: center; }
-
-  @media (prefers-reduced-motion: reduce) {
-    .acla-category-tile, .acla-category-tile > img { transition: none; }
-    .acla-category-tile--linked:is(:hover, :focus-visible), .acla-category-tile--linked:is(:hover, :focus-visible) > img { transform: none; }
-  }
-{% endstylesheet %}
-
 {% schema %}
 {
   "name": "t:acla_category_tiles.tile_name",
   "tag": null,
+  "blocks": [{ "type": "_acla-category-tile-slide" }],
   "settings": [
+    { "type": "paragraph", "content": "t:acla_category_tiles.slides_help" },
     { "type": "image_picker", "id": "image", "label": "t:settings.image" },
     { "type": "url", "id": "link", "label": "t:settings.link" }
   ],

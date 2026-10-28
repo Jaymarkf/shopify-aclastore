@@ -8,6 +8,11 @@
  * ------------------------------------------------------------
  */
 {
+  "acla_header": {
+    "view_promotion": "View promotion",
+    "copic_promotion": "What’s Octoberfest without a Copic sale? Copic-toberfest sale!",
+    "sign_in_register": "Sign in / Register"
+  },
   "acla_announcements": {
     "label": "Store announcements",
     "pause": "Pause announcements",
@@ -392,6 +397,7 @@
     "breadcrumb": "Breadcrumb",
     "home": "Home",
     "art_supplies": "Art supplies",
+    "all_products": "All products",
     "zoom_image": "Enlarge product image",
     "product_images": "Product images",
     "image_number": "View image {{ number }}",
@@ -474,10 +480,12 @@
     "search_match": "Search result: {{ product }}"
   },
   "acla_navigation": {
+    "view_all": "View all {{ title }}",
     "show_brand": "Show {{ brand }} product families"
   },
   "acla_category_tiles": {
     "navigation": "Browse categories",
+    "slideshow": "Category images",
     "link_label": "Browse category",
     "choose_image": "Choose an image and link"
   },

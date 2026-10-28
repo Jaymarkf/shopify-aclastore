@@ -1,0 +1,33 @@
+{% doc %}
+  Renders one category slide's image and optional destination link.
+  The image library alt text takes priority over the linked collection title.
+  Styles are owned by the containing Category tile block.
+  @param {image} [image] - Merchant-selected image.
+  @param {string} [link] - Optional image destination.
+  @param {string} [attributes] - Trusted theme-editor attributes for a nested block.
+  @example
+  {% render 'acla-category-tile-media', image: block.settings.image, link: block.settings.link, attributes: block.shopify_attributes %}
+{% enddoc %}
+{% liquid
+  assign tile_tag = 'div'
+  if link != blank
+    assign tile_tag = 'a'
+  endif
+  assign fallback_alt = 'acla_category_tiles.link_label' | t
+  if link contains '/collections/'
+    assign category_handle = link | split: '?' | first | split: '#' | first | split: '/' | last
+    assign linked_category = collections[category_handle]
+    if linked_category != blank
+      assign fallback_alt = linked_category.title
+    endif
+  endif
+  assign image_alt = image.alt | default: fallback_alt
+%}
+<{{ tile_tag }} class="acla-category-tile__content" {% if link != blank %}href="{{ link | escape }}"{% endif %} {{ attributes }}>
+  {% if image != blank %}
+    {{ image | image_url: width: 1280 | image_tag: loading: 'lazy', decoding: 'async', widths: '240, 360, 540, 720, 960, 1280', sizes: 'auto, (min-width: 990px) 33vw, 50vw', alt: image_alt }}
+  {% else %}
+    {{ 'collection-1' | placeholder_svg_tag: 'acla-category-tile__placeholder' }}
+    <span class="acla-category-tile__editor-hint">{{ 'acla_category_tiles.choose_image' | t }}</span>
+  {% endif %}
+</{{ tile_tag }}>

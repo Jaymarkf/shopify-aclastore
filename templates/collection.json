@@ -58,10 +58,30 @@
             "padding-inline-end": 0
           },
           "blocks": {}
+        },
+        "collection_banner": {
+          "type": "image",
+          "name": "t:acla_collection_banner.name",
+          "settings": {
+            "image": "{{ closest.collection.image }}",
+            "hide_when_empty": true,
+            "image_ratio": "adapt",
+            "width": "fill",
+            "width_mobile": "fill",
+            "height": "fit",
+            "border": "none",
+            "border_radius": 0,
+            "padding-block-start": 8,
+            "padding-block-end": 8,
+            "padding-inline-start": 0,
+            "padding-inline-end": 0
+          },
+          "blocks": {}
         }
       },
       "block_order": [
         "text_tqQTNE",
+        "collection_banner",
         "text_twGGkJ"
       ],
       "name": "t:names.heading",
@@ -134,7 +154,8 @@
             "card-gallery": {
               "type": "_product-card-gallery",
               "settings": {
-                "image_ratio": "adapt",
+                "image_ratio": "square",
+                "image_fit": "contain",
                 "border": "none",
                 "border_width": 1,
                 "border_opacity": 100,

@@ -1,0 +1,307 @@
+{% doc %}
+  Responsive branding row. A selected campaign image moves the logo to the upper
+  start corner; without an image the logo stays centered. Uses the native controls.
+  @param {object} settings - Header section settings
+  @param {string} logo - Captured static Logo block
+  @param {string} [first] - Native mobile menu drawer
+  @param {string} [search] - Native desktop search control
+  @param {string} [drawer_search] - Native mobile search control
+  @param {string} [localization] - Native localization control
+  @param {string} [actions] - Native account and cart controls
+  @example
+  {% render 'header-brand-row', settings: section.settings, logo: logo, actions: actions %}
+{% enddoc %}
+
+{% liquid
+  assign has_campaign = false
+  if settings.brand_campaign_image != blank or settings.brand_use_included_promo
+    assign has_campaign = true
+  endif
+%}
+<div class="header-brand{% if has_campaign %} header-brand--campaign{% endif %}">
+  <div class="header-brand__logo">{{ logo }}</div>
+  <div class="header-brand__tools">
+    {{ localization }}
+    {{ search }}
+    {{ drawer_search }}
+    {{ actions }}
+  </div>
+  <div class="header-brand__drawer">{{ first }}</div>
+  {% if has_campaign %}
+    {% liquid
+      assign campaign_alt = settings.brand_campaign_alt | default: settings.brand_campaign_image.alt
+      if campaign_alt == blank and settings.brand_campaign_image == blank
+        assign campaign_alt = 'acla_header.copic_promotion' | t
+      endif
+      assign campaign_tag = 'div'
+      if settings.brand_campaign_link != blank
+        assign campaign_tag = 'a'
+      endif
+    %}
+    <{{ campaign_tag }} class="header-brand__campaign"{% if settings.brand_campaign_link != blank %} href="{{ settings.brand_campaign_link }}"{% if campaign_alt == blank %} aria-label="{{ 'acla_header.view_promotion' | t | escape }}"{% endif %}{% endif %}>
+      {% if settings.brand_campaign_image != blank %}
+        {{ settings.brand_campaign_image | image_url: width: 1600 | image_tag: widths: '320, 480, 640, 800, 1200, 1600', sizes: '(min-width: 990px) 54vw, (min-width: 750px) 46vw, 94vw', loading: 'eager', class: 'header-brand__campaign-image', alt: campaign_alt }}
+      {% else %}
+        <img src="{{ 'copic-octoberfest-transparent.png' | asset_url }}" width="2170" height="725" class="header-brand__campaign-image" loading="eager" alt="{{ campaign_alt | escape }}">
+      {% endif %}
+    </{{ campaign_tag }}>
+  {% endif %}
+  {% if settings.brand_left_text != blank %}
+    <div class="header-brand__info header-brand__info--address">{{ settings.brand_left_text }}</div>
+  {% endif %}
+  {% if settings.brand_right_text != blank %}
+    <div class="header-brand__info header-brand__info--hours">{{ settings.brand_right_text }}</div>
+  {% endif %}
+</div>
+
+{% stylesheet %}
+  #header-component.header--brand .header__row--top .header__columns {
+    display: block;
+    padding-block: 0;
+  }
+
+  .header-brand {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    grid-template-areas: 'logo logo' 'drawer tools';
+    align-items: center;
+    column-gap: var(--gap-sm);
+    row-gap: var(--gap-xs);
+    min-inline-size: 0;
+    padding-block: var(--padding-md) var(--padding-2xs);
+  }
+
+  .header-brand__logo {
+    grid-area: logo;
+    display: flex;
+    justify-content: center;
+    min-inline-size: 0;
+  }
+
+  .header-brand__logo .header-logo {
+    block-size: auto;
+    max-inline-size: 100%;
+    inline-size: var(--header-custom-logo-width-mobile, auto);
+  }
+
+  .header-brand__tools {
+    grid-area: tools;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: var(--gap-xs);
+    min-inline-size: 0;
+  }
+
+  .header-brand__drawer {
+    grid-area: drawer;
+    border-radius: var(--style-border-radius-buttons-primary);
+    background: rgb(var(--color-background-rgb) / var(--opacity-90));
+  }
+  .header-brand__info { display: none; }
+
+  #header-component[data-group-background] .header-brand__tools {
+    justify-self: end;
+    padding-inline: var(--padding-xs);
+    border-radius: var(--style-border-radius-popover);
+    background: rgb(var(--color-background-rgb) / var(--opacity-90));
+  }
+
+  .header-brand__cart,
+  #header-component.header--brand .menu-list__link.header-brand__home {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+
+  .header-brand__cart .header-actions__cart-icon { color: inherit; }
+
+  .header-brand__campaign {
+    grid-area: campaign;
+    display: block;
+    inline-size: min(100%, var(--brand-campaign-width));
+    min-inline-size: 0;
+    justify-self: center;
+    align-self: center;
+  }
+
+  .header-brand__campaign-image {
+    display: block;
+    inline-size: 100%;
+    block-size: auto;
+    max-block-size: clamp(100px, calc(var(--brand-header-height) - 72px), 208px);
+    object-fit: contain;
+  }
+
+  .header-brand__tools .header-actions__action { min-block-size: var(--minimum-touch-target); }
+
+  .header-brand--campaign {
+    grid-template-areas: 'logo logo' 'campaign campaign' 'drawer tools';
+  }
+
+  #header-component.header--brand .header__row--bottom .header__columns {
+    padding-block: 0;
+    min-block-size: 52px;
+  }
+
+  #header-component.header--brand[data-group-background] .header__row--bottom .header__columns {
+    background: rgb(var(--color-background-rgb) / var(--opacity-90));
+  }
+
+  #header-component.header--brand .header__row--bottom .menu-list__link {
+    color: var(--color-foreground);
+  }
+
+  #header-component.header--brand .header__row--bottom {
+    padding-block: 0;
+    border-block-start: 1px solid rgb(var(--color-foreground-rgb) / var(--opacity-10));
+  }
+
+  #header-component.header--brand .menu-list__link {
+    padding-inline: var(--padding-sm);
+    min-block-size: var(--minimum-touch-target);
+    transition: background-color var(--animation-speed) var(--animation-easing);
+  }
+
+  #header-component.header--brand .menu-list__trigger { gap: 0; }
+
+  #header-component.header--brand .menu-list__submenu-inner {
+    max-block-size: calc(100dvh - var(--header-group-height) - 12px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  #header-component.header--brand .menu-list__disclosure {
+    position: static;
+    min-inline-size: 32px;
+    min-block-size: var(--minimum-touch-target);
+    margin-inline-end: var(--margin-xs);
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+  }
+
+  #header-component.header--brand .menu-list__link[aria-current='page'],
+  #header-component.header--brand .menu-list__link:hover,
+  #header-component.header--brand .menu-list__trigger:focus-within {
+    background: rgb(var(--color-foreground-rgb) / var(--opacity-5));
+  }
+
+  #header-component.header--brand .menu-list__link.header-brand__home {
+    background-color: var(--color-background);
+  }
+
+  .header-brand__cart {
+    border-radius: var(--style-border-radius-buttons-primary);
+    transition: opacity var(--animation-speed) var(--animation-easing);
+  }
+
+  .header-brand__cart:hover { opacity: 0.85; }
+
+  .header-brand__tools :is(a, button):focus-visible,
+  .header-brand__campaign:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 4px;
+  }
+
+  @media screen and (min-width: 750px) {
+    #header-component.header--brand[data-menu-style='menu'] .header-brand {
+      grid-template-columns: minmax(150px, 1fr) minmax(0, 2.6fr) minmax(150px, 1fr);
+      grid-template-rows: 44px minmax(120px, 1fr);
+      grid-template-areas: '. tools tools' 'address logo hours';
+      min-block-size: var(--brand-header-height);
+      gap: var(--gap-sm) clamp(16px, 2vw, 36px);
+      padding-block: var(--padding-sm) var(--padding-lg);
+    }
+
+    #header-component.header--brand[data-menu-style='menu'] .header-brand--campaign {
+      grid-template-areas: 'logo tools tools' 'address campaign hours';
+    }
+
+    #header-component.header--brand[data-menu-style='menu'] .header-brand__drawer { display: none; }
+
+    #header-component.header--brand[data-menu-style='menu'] .header-brand__logo {
+      align-self: center;
+    }
+
+    #header-component.header--brand[data-menu-style='menu'] .header-brand__logo .header-logo {
+      inline-size: min(var(--header-custom-logo-width, auto), 100%);
+    }
+
+    #header-component.header--brand[data-menu-style='menu'] .header-brand--campaign .header-brand__logo {
+      justify-content: flex-start;
+      align-self: start;
+      inline-size: var(--brand-corner-logo-width);
+      max-inline-size: calc(100% + 70px);
+      z-index: 1;
+    }
+
+    #header-component.header--brand[data-menu-style='menu'] .header-brand__tools {
+      align-self: start;
+      gap: clamp(10px, 1.5vw, 24px);
+      min-block-size: 44px;
+    }
+
+    .header-brand__tools .header-actions--text { gap: var(--gap-md); }
+
+    .header-brand__tools :is(.header-actions__text-style, .account-button__text) {
+      font-size: var(--header-actions-font-size, 0.75rem);
+    }
+
+    .header-brand__tools .search-action .svg-wrapper,
+    .header-brand__tools .header-actions__cart-icon .svg-wrapper {
+      display: inline-flex;
+      inline-size: 18px;
+      block-size: 18px;
+    }
+
+    .header-brand__tools .search-action > button {
+      display: flex;
+      align-items: center;
+      flex-direction: row-reverse;
+      gap: var(--gap-xs);
+    }
+
+    .header-brand__tools .header-actions__cart-icon {
+      display: flex;
+      align-items: center;
+      flex-direction: row-reverse;
+      gap: var(--gap-xs);
+    }
+
+    .header-brand__tools [data-testid='cart-drawer-trigger'],
+    .header-brand__tools .action__cart {
+      padding-inline: var(--padding-md);
+      border-radius: var(--style-border-radius-buttons-primary);
+    }
+
+    #header-component.header--brand[data-menu-style='menu'] .header-brand__info {
+      display: block;
+      align-self: center;
+      min-inline-size: 0;
+      font-size: clamp(11px, 0.9vw, 13px);
+      line-height: 1.65;
+      overflow-wrap: anywhere;
+    }
+
+    #header-component.header--brand[data-group-background] .header-brand__info {
+      padding: var(--padding-sm) var(--padding-md);
+      border: 1px solid rgb(var(--color-foreground-rgb) / var(--opacity-5));
+      border-radius: var(--style-border-radius-popover);
+      background: rgb(var(--color-background-rgb) / var(--opacity-90));
+    }
+
+    .header-brand__info p { margin-block: 0; }
+    .header-brand__info p + p { margin-block-start: var(--margin-2xs); }
+    .header-brand__info strong { font-weight: 650; }
+    .header-brand__info--address { grid-area: address; }
+    .header-brand__info--hours { grid-area: hours; text-align: end; }
+    .header-brand__info a { text-underline-offset: 3px; }
+
+    #header-component.header--brand .header__row--bottom .header__column--left { gap: 0; }
+    #header-component.header--brand .header__row--bottom .overflow-menu::part(list) { gap: var(--gap-xs); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #header-component.header--brand .menu-list__link { transition: none; }
+  }
+{% endstylesheet %}

@@ -153,13 +153,12 @@ export class Slideshow extends Component {
       this.#scroll.destroy();
     }
 
-    const slideCount = this.slides?.length || 0;
-    if (slideCount > 1) {
-      this.removeEventListener('mouseenter', this.suspend);
-      this.removeEventListener('mouseleave', this.resume);
-      this.removeEventListener('pointerenter', this.#handlePointerEnter);
-      document.removeEventListener('visibilitychange', this.#handleVisibilityChange);
-    }
+    // The editor may have removed slides before disconnection. Clean up the
+    // listeners regardless of the current count, including a 2-to-1 transition.
+    this.removeEventListener('mouseenter', this.suspend);
+    this.removeEventListener('mouseleave', this.resume);
+    this.removeEventListener('pointerenter', this.#handlePointerEnter);
+    document.removeEventListener('visibilitychange', this.#handleVisibilityChange);
 
     if (this.#resizeObserver) {
       this.#resizeObserver.disconnect();
@@ -569,12 +568,14 @@ export class Slideshow extends Component {
 
     // Batch reads and writes to the DOM
     scheduler.schedule(() => {
+      if (!this.isConnected) return;
       let visibleSlidesAmount = 0;
       const initialSlideId = this.initialSlide?.getAttribute('slide-id');
 
       // Wait for next frame to ensure layout is fully calculated before setting initial scroll position
       // This prevents race conditions on Safari mobile when section_width is 'full-width'
       requestAnimationFrame(() => {
+        if (!this.isConnected) return;
         if (this.initialSlideIndex !== 0 && initialSlideId) {
           this.select({ id: initialSlideId }, undefined, { animate: false });
           visibleSlidesAmount = 1;
@@ -936,6 +937,7 @@ export class Slideshow extends Component {
 
     // Batch writes to the DOM
     scheduler.schedule(() => {
+      if (!this.isConnected) return;
       // Update aria-hidden based on visibility
       slides.forEach((slide) => {
         const isVisible = visibleSlides.includes(slide);

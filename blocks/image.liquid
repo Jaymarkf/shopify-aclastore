@@ -1,5 +1,8 @@
-
-
+{% doc %}
+  Responsive image with editable sizing and optional hiding for empty dynamic sources.
+  @example
+  {% content_for 'block', type: 'image', id: 'collection-banner' %}
+{% enddoc %}
 {% liquid
   assign block_settings = block.settings
   assign ratio = 1
@@ -60,6 +63,7 @@
   {%- endif -%}
 {% endcapture %}
 
+{% if block_settings.image != blank or block_settings.hide_when_empty != true or request.design_mode %}
 {% if block_settings.link == blank %}
   <div
     class="{{ class }}"
@@ -77,6 +81,7 @@
   >
     {{ image }}
   </a>
+{% endif %}
 {% endif %}
 
 {% stylesheet %}
@@ -121,6 +126,12 @@
       "type": "image_picker",
       "id": "image",
       "label": "t:settings.image"
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_when_empty",
+      "label": "t:acla_collection_banner.hide_empty",
+      "default": false
     },
     {
       "type": "url",
